@@ -23,6 +23,18 @@ def test_healthz():
     assert r.json()["status"] == "ok"
 
 
+def test_get_demo_exam():
+    r = client().get("/v1/exams/pie-demo-001")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["id"] == "pie-demo-001"
+    assert len(body["questions"]) == 3
+
+
+def test_get_unknown_exam_404():
+    assert client().get("/v1/exams/nope").status_code == 404
+
+
 def test_ingest_events():
     r = client().post("/v1/events", json={"session_id": "s1", "events": [{"type": "focus.lost"}]})
     assert r.status_code == 200

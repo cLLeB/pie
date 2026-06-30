@@ -3,13 +3,16 @@ and a registry for independent certificate lookup."""
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import __version__, config
+from .exams import ExamRepo
 from .identity import IdentityClient
 from .signing import sign_certificate, verify_certificate, verify_chain
 from .store import Store
@@ -41,14 +44,35 @@ class IdentityVerifyRequest(BaseModel):
     image: str = Field(min_length=1)
 
 
-def create_app(store: Store | None = None, identity: IdentityClient | None = None) -> FastAPI:
+def create_app(
+    store: Store | None = None,
+    identity: IdentityClient | None = None,
+    exams: ExamRepo | None = None,
+) -> FastAPI:
     app = FastAPI(title="PIE Server", version=__version__)
     app.state.store = store or Store()
     app.state.identity = identity
+    app.state.exams = exams or ExamRepo()
+
+    origins = [o for o in os.environ.get("PIE_CORS_ORIGINS", "").split(",") if o.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["content-type"],
+        )
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "version": __version__}
+
+    @app.get("/v1/exams/{exam_id}")
+    def get_exam(exam_id: str) -> dict[str, Any]:
+        exam = app.state.exams.get(exam_id)
+        if exam is None:
+            raise HTTPException(status_code=404, detail="exam not found")
+        return exam
 
     @app.post("/v1/events")
     def ingest_events(batch: EventBatch) -> dict[str, int]:

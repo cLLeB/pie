@@ -2,7 +2,7 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 80 passing (integrity-core 53 · candidate 10 · review 6 · server 11). TS+Py, all green.
+## Tests: 92 passing (integrity-core 56 · candidate 13 · review 6 · server 17). TS+Py, all green.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -26,13 +26,16 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
       secret, **byte-identical to the TS signer**, cross-language test pinned), verify endpoint,
       certificate registry. 11 pytest. (Persistence still in-memory → Postgres/object-store next.)
 
-## In progress / next (the road to 100%)
-- [ ] **Wire candidate → server** — submit bundle root for server-side signing (stop signing on the
-      client); POST event batches; CORS. Then **Postgres + object store** behind the Store interface.
-- [ ] **Identity integration** — wire the existing biometric `/v1` API as the WHO: enrollment,
-      pre-exam check, sampled continuous-identity loop; bind identity events into the ledger.
-- [ ] **On-device vision sensors** — MediaPipe FaceMesh/ONNX-Web: face presence/count, gaze/head-pose,
-      phone/object (YOLOv8n). Privacy-first (events, not footage).
+- [x] **Wire candidate → server signing** — injectable `serverThenLocal` signer (server-side signing
+      with offline local fallback); CORS configurable; mocked-fetch tests.
+- [x] **Identity layer (server)** — `/v1/identity/verify` fronting the biometric `/v1` (injectable
+      `IdentityClient`, httpx MockTransport test). Next: candidate continuous-identity loop binding
+      identity results into the ledger as events.
+- [x] **Exam delivery (server)** — `GET /v1/exams/{id}` + `ExamRepo`. Next: candidate fetches it; QTI import.
+- [x] **Deploy scaffold** — server `Dockerfile` + root `docker-compose.yml` (on-prem, offline).
+- [ ] **On-device vision sensors** — `FacePresenceSensor` core done; wire MediaPipe/ONNX in the app
+      (face presence/count, gaze/head-pose, phone/object). Privacy-first (events, not footage).
+- [ ] **Persistence** — Postgres + object store behind the `Store` interface (in-memory today).
 - [ ] **Timer + exam lifecycle** — countdown, autosave, resume, submit deadlines.
 - [ ] **LMS integration** — LTI 1.3 launch + QTI item import + Caliper events.
 - [ ] **Browser extension (MV3)** — screen/multi-monitor/process signals for the high-stakes rung.
