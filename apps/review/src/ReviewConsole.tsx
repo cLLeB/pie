@@ -5,20 +5,40 @@ import {
   authorshipVerdict,
   analyzeIntegrity,
   type AnswerSummary,
+  type AuthenticityBundle,
   type IntegrityFlag,
+  type SignedCertificate,
 } from '@pie/integrity-core';
 import { Replay } from './Replay';
-import { demoPackage, type CertificatePackage } from './demoPackage';
+import { demoPackage } from './demoPackage';
 
-function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) {
+interface LoadedPackage {
+  bundle: AuthenticityBundle;
+  cert: SignedCertificate;
+}
+
+function ImportPanel({
+  onLoad,
+  secret,
+  setSecret,
+}: {
+  onLoad: (pkg: LoadedPackage) => void;
+  secret: string;
+  setSecret: (s: string) => void;
+}) {
   const [json, setJson] = useState('');
-  const [secret, setSecret] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // The tenant secret is applied live (see ReviewConsole), so loading only needs
+  // the bundle + cert. Empty input is ignored rather than reported as an error.
   const loadFromText = (text: string) => {
+    if (!text.trim()) {
+      setError(null);
+      return;
+    }
     try {
       const { bundle, cert } = parseCertificatePackage(text);
-      onLoad({ bundle, cert, secret });
+      onLoad({ bundle, cert });
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load package');
@@ -39,6 +59,7 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
       <summary>Load a certificate package</summary>
       <p className="import-hint">
         Load the downloaded <code>pie-certificate-*.json</code> file (recommended), or paste it below.
+        The tenant secret applies as you type.
       </p>
       <input
         type="file"
@@ -59,7 +80,7 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
         value={secret}
         onChange={(e) => setSecret(e.target.value)}
       />
-      <button onClick={() => loadFromText(json)}>Verify package</button>
+      <button onClick={() => loadFromText(json)}>Verify pasted package</button>
       {error && <p className="warn import-error">{error}</p>}
     </details>
   );
@@ -128,15 +149,17 @@ function AnswerCard({ answer }: { answer: AnswerSummary }) {
   );
 }
 
-export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage }) {
-  const [active, setActive] = useState<CertificatePackage>(pkg);
+export function ReviewConsole({ pkg = demoPackage }: { pkg?: { bundle: AuthenticityBundle; cert: SignedCertificate; secret: string } }) {
+  const [loaded, setLoaded] = useState<LoadedPackage>({ bundle: pkg.bundle, cert: pkg.cert });
+  const [secret, setSecret] = useState(pkg.secret);
+
   const result = useMemo(
-    () => verifySignedBundle({ bundle: active.bundle, cert: active.cert, secret: active.secret }),
-    [active],
+    () => verifySignedBundle({ bundle: loaded.bundle, cert: loaded.cert, secret }),
+    [loaded, secret],
   );
   const flags = useMemo(
-    () => analyzeIntegrity({ events: active.bundle.events, answers: active.bundle.answers }),
-    [active],
+    () => analyzeIntegrity({ events: loaded.bundle.events, answers: loaded.bundle.answers }),
+    [loaded],
   );
 
   return (
@@ -146,7 +169,7 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
         <span className="badge">Verify · Replay</span>
       </header>
 
-      <ImportPanel onLoad={setActive} />
+      <ImportPanel onLoad={setLoaded} secret={secret} setSecret={setSecret} />
 
       <section className={`verdict ${result.ok ? 'ok-box' : 'warn-box'}`} aria-label="Verification result">
         <h2>{result.ok ? 'Certificate verified' : 'Certificate FAILED verification'}</h2>
@@ -156,12 +179,12 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
           <Check label="Signature valid under tenant secret" ok={result.signatureOk} />
         </ul>
         <p className="chain-root">
-          root <code>{active.bundle.root.slice(0, 28)}…</code> · {active.bundle.events.length} events
+          root <code>{loaded.bundle.root.slice(0, 28)}…</code> · {loaded.bundle.events.length} events
         </p>
         <button
           className="tamper"
           onClick={() =>
-            setActive((p) => {
+            setLoaded((p) => {
               const events = p.bundle.events.map((e) => ({ ...e }));
               if (events[0]) (events[0] as { data: Record<string, unknown> }).data = { hacked: true };
               return { ...p, bundle: { ...p.bundle, events } };
@@ -176,7 +199,7 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
 
       <section className="answers" aria-label="Answers">
         <h2>Answers</h2>
-        {active.bundle.answers.map((a) => (
+        {loaded.bundle.answers.map((a) => (
           <AnswerCard key={a.id} answer={a} />
         ))}
       </section>

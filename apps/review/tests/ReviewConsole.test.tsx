@@ -24,23 +24,23 @@ describe('ReviewConsole', () => {
     expect(screen.getByText(/Provenance beats detection\./)).toBeInTheDocument();
   });
 
-  it('imports a pasted package and fails verification under the wrong secret', () => {
+  it('re-verifies live when the tenant secret changes (no reload needed)', () => {
     render(<ReviewConsole />);
+    // Demo starts verified with the correct secret.
+    expect(screen.getByText('Certificate verified')).toBeInTheDocument();
+    // Typing a wrong secret flips the verdict immediately — no button click.
     fireEvent.click(screen.getByText('Load a certificate package'));
-    const json = serializeCertificatePackage(demoPackage.bundle, demoPackage.cert);
-    fireEvent.change(screen.getByLabelText('Certificate package JSON'), { target: { value: json } });
     fireEvent.change(screen.getByLabelText('Tenant secret'), { target: { value: 'wrong-secret' } });
-    fireEvent.click(screen.getByRole('button', { name: /verify package/i }));
     expect(screen.getByText('Certificate FAILED verification')).toBeInTheDocument();
   });
 
-  it('loads a certificate from an uploaded .json file and verifies with the entered secret', async () => {
+  it('loads a certificate from an uploaded .json file and verifies under the live secret', async () => {
     render(<ReviewConsole />);
     fireEvent.click(screen.getByText('Load a certificate package'));
     const json = serializeCertificatePackage(demoPackage.bundle, demoPackage.cert);
     const file = new File([json], 'pie-certificate.json', { type: 'application/json' });
 
-    // Wrong secret → if the file truly loaded and used it, the verdict must FAIL.
+    // Wrong secret → if the file truly loaded and the live secret is used, it FAILS.
     fireEvent.change(screen.getByLabelText('Tenant secret'), { target: { value: 'wrong' } });
     fireEvent.change(screen.getByLabelText('Certificate file'), { target: { files: [file] } });
 
@@ -51,7 +51,7 @@ describe('ReviewConsole', () => {
     render(<ReviewConsole />);
     fireEvent.click(screen.getByText('Load a certificate package'));
     fireEvent.change(screen.getByLabelText('Certificate package JSON'), { target: { value: 'garbage' } });
-    fireEvent.click(screen.getByRole('button', { name: /verify package/i }));
+    fireEvent.click(screen.getByRole('button', { name: /verify pasted package/i }));
     expect(screen.getByText(/not valid JSON/i)).toBeInTheDocument();
   });
 
