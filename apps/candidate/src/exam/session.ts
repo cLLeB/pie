@@ -1,6 +1,7 @@
 import {
   Ledger,
   ProvenanceRecorder,
+  FacePresenceSensor,
   applyAll,
   buildAuthenticityBundle,
   type AuthenticityBundle,
@@ -23,6 +24,8 @@ export interface IntegritySummary {
   identityChecks: number;
   /** Result of the most recent identity check (null if none yet). */
   lastIdentityMatch: boolean | null;
+  /** Most recent detected face count (null if the camera is off). */
+  lastFaceCount: number | null;
 }
 
 /**
@@ -39,6 +42,8 @@ export class ExamSession {
   private identityChecks = 0;
   private lastIdentityMatch: boolean | null = null;
   private startedAt = 0;
+  private lastFaceCount: number | null = null;
+  private readonly facePresence: FacePresenceSensor;
   /** Per-choice-question selection history: timestamps + values. */
   private readonly choices = new Map<string, { value: string; t: number }[]>();
 
@@ -48,9 +53,16 @@ export class ExamSession {
   ) {
     this.now = opts.now ?? Date.now;
     this.ledger = new Ledger({ now: this.now });
+    this.facePresence = new FacePresenceSensor((type, data) => this.ledger.append(type, data));
     for (const q of exam.questions) {
       this.recorders.set(q.id, new ProvenanceRecorder(this.now));
     }
+  }
+
+  /** Feed a detected face count from the on-device detector (camera tick). */
+  observeFaceCount(count: number): void {
+    this.lastFaceCount = count;
+    this.facePresence.observe(count);
   }
 
   start(): void {
@@ -110,6 +122,7 @@ export class ExamSession {
       footageStored: false,
       identityChecks: this.identityChecks,
       lastIdentityMatch: this.lastIdentityMatch,
+      lastFaceCount: this.lastFaceCount,
     };
   }
 

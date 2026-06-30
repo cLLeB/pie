@@ -10,6 +10,7 @@ export interface UseExamSession {
   signedCert: SignedCertificate | null;
   recordTextInput: (questionId: string, e: InputEventLike) => void;
   recordChoice: (questionId: string, value: string) => void;
+  recordFaceCount: (count: number) => void;
   textAnswer: (questionId: string) => string;
   submit: () => void;
 }
@@ -93,6 +94,14 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     [session, refresh],
   );
 
+  const recordFaceCount = useCallback(
+    (count: number) => {
+      session.observeFaceCount(count);
+      refresh();
+    },
+    [session, refresh],
+  );
+
   const textAnswer = useCallback((questionId: string) => session.answerText(questionId), [session]);
 
   const submit = useCallback(() => {
@@ -102,5 +111,14 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     void signer(finalized.root).then(setSignedCert);
   }, [session, refresh, signer]);
 
-  return { summary, bundle, signedCert, recordTextInput, recordChoice, textAnswer, submit };
+  return {
+    summary,
+    bundle,
+    signedCert,
+    recordTextInput,
+    recordChoice,
+    recordFaceCount,
+    textAnswer,
+    submit,
+  };
 }

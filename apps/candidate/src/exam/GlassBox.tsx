@@ -21,6 +21,18 @@ export function GlassBox({ summary }: { summary: IntegritySummary }) {
           )}
         </li>
         <li>
+          <span>Face on camera</span>
+          {summary.lastFaceCount === null ? (
+            <strong className="muted">camera off</strong>
+          ) : summary.lastFaceCount === 1 ? (
+            <strong className="ok">present ✓</strong>
+          ) : summary.lastFaceCount === 0 ? (
+            <strong className="warn">no face</strong>
+          ) : (
+            <strong className="warn">{summary.lastFaceCount} faces</strong>
+          )}
+        </li>
+        <li>
           <span>Left exam surface</span>
           <strong className={summary.focusLossCount > 0 ? 'warn' : 'ok'}>
             {summary.focusLossCount} time{summary.focusLossCount === 1 ? '' : 's'}

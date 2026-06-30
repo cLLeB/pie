@@ -95,6 +95,17 @@ describe('ExamSession', () => {
     expect(summary.lastIdentityMatch).toBeNull();
   });
 
+  it('emits face presence transitions from observed face counts', () => {
+    const s = new ExamSession(exam, { now: clock() });
+    s.start();
+    s.observeFaceCount(1); // present
+    s.observeFaceCount(0); // absent
+    s.observeFaceCount(2); // multiple
+    const types = s.ledger.export().map((e) => e.type);
+    expect(types).toEqual(expect.arrayContaining(['face.present', 'face.absent', 'face.multiple']));
+    expect(s.integritySummary().lastFaceCount).toBe(2);
+  });
+
   it('binds continuous-identity check results into the ledger and summary', () => {
     const s = new ExamSession(exam, { now: clock() });
     s.start();
