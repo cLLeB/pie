@@ -2,7 +2,7 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 103 passing (integrity-core 61 · candidate 16 · review 6 · server 20). TS+Py, all green.
+## Tests: 136 passing (integrity-core 74 · candidate 21 · review 9 · server 32). TS+Py, all green.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -35,17 +35,22 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
 - [x] **Deploy scaffold** — server `Dockerfile` + root `docker-compose.yml` (on-prem, offline).
 - [x] **Persistence** — durable `SqliteStore` behind `EventStore` Protocol (offline single-file);
       compose mounts a volume. Postgres/object-store can follow behind the same Protocol.
-- [~] **Sensor catalog (testable cores done)** — visibility, fullscreen, face-presence, **gaze
-      (dwell-thresholded)**, **prohibited-object**, **multi-monitor**, keystroke provenance. Each is
-      an injectable module emitting ledger events. Remaining: feed them from real on-device models
-      (MediaPipe FaceMesh/ONNX-Web gaze+pose, YOLOv8n objects) + `getUserMedia` in the app — browser/
-      GPU runtime work that can't be unit-tested here.
-- [ ] **MV3 extension** — relay screen/multi-monitor/process signals into the page → ledger.
-- [ ] **LMS** — LTI 1.3 launch + QTI import + Caliper.
+- [x] **On-device vision** — MediaPipe BlazeFace face presence wired into the candidate (opt-in
+      camera, lazy-loaded, on-device → ledger + glass-box). Gaze/pose + YOLO objects next (cores done).
+- [x] **Fusion/scoring engine** — `analyzeIntegrity`: paste-after-focus-loss, identity-mismatch,
+      excessive focus loss, pasted-content, fast-choice; ranked flags shown in the review console.
+- [x] **Kind-aware answers** — objective (choice) questions use selection/timing/changes provenance;
+      paste flagging triggers on ANY paste (not just 100% ratio) to defeat dilution.
+- [x] **MV3 browser extension** — multi-monitor/window signals via a validated postMessage protocol
+      (shared in core); candidate records them; builds to a loadable `dist/`.
+- [x] **LMS** — `POST /lti/launch` (LTI 1.3 id_token RS256 validation) + `POST /v1/exams/import-qti`
+      (QTI 3.0 → PIE exam). Full OIDC login-init handshake + Caliper still to add.
+- [x] **Certificate file load** — review console loads the downloaded `.json` directly (FileReader).
+- [x] **Sensor catalog (cores)** — visibility, fullscreen, face-presence, gaze (dwell-thresholded),
+      prohibited-object, multi-monitor, keystroke provenance — injectable, tested modules.
+- [ ] **Remaining vision models** — gaze/head-pose + YOLOv8n objects via ONNX-Web (browser/GPU).
 - [ ] **Timer + exam lifecycle** — countdown, autosave, resume, submit deadlines.
-- [ ] **LMS integration** — LTI 1.3 launch + QTI item import + Caliper events.
-- [ ] **Browser extension (MV3)** — screen/multi-monitor/process signals for the high-stakes rung.
-- [ ] **Deployment** — Docker Compose (on-prem/air-gapped) + cloud; bundle the biometric engine.
+- [ ] **Deployment polish** — bundle the biometric engine into compose; cloud Helm.
 - [ ] **Hardening** — security review (extension/helper), bias audit of identity step, accessibility,
       pilot validation that provenance separates authored vs. pasted without false positives.
 - [ ] **Research-completeness** — clone + run the OSS reference repos; full-read the key papers;

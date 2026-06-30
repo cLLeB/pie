@@ -35,6 +35,30 @@ def test_get_unknown_exam_404():
     assert client().get("/v1/exams/nope").status_code == 404
 
 
+def test_import_qti_then_fetch():
+    c = client()
+    qti = (
+        '<qti-assessment-item identifier="i1" title="T">'
+        "<qti-item-body><p>Imported prompt.</p></qti-item-body></qti-assessment-item>"
+    )
+    r = c.post(
+        "/v1/exams/import-qti",
+        json={"exam_id": "imp-1", "title": "Imported", "qti_xml": qti},
+    )
+    assert r.status_code == 200
+    assert r.json()["questions"][0]["prompt"] == "Imported prompt."
+    # It is now fetchable like any exam.
+    assert c.get("/v1/exams/imp-1").status_code == 200
+
+
+def test_import_qti_rejects_malformed_xml():
+    r = client().post(
+        "/v1/exams/import-qti",
+        json={"exam_id": "bad", "title": "B", "qti_xml": "<not-closed>"},
+    )
+    assert r.status_code == 400
+
+
 def test_ingest_events():
     r = client().post("/v1/events", json={"session_id": "s1", "events": [{"type": "focus.lost"}]})
     assert r.status_code == 200

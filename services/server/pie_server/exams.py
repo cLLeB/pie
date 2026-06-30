@@ -33,3 +33,6 @@ class ExamRepo:
 
     def get(self, exam_id: str) -> dict[str, Any] | None:
         return self._exams.get(exam_id)
+
+    def add(self, exam: dict[str, Any]) -> None:
+        self._exams[exam["id"]] = exam
