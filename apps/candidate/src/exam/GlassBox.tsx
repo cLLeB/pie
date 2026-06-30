@@ -32,6 +32,14 @@ export function GlassBox({ summary }: { summary: IntegritySummary }) {
             <strong className="warn">multiple faces</strong>
           )}
         </li>
+        {summary.facePresence !== null && (
+          <li>
+            <span>Gaze</span>
+            <strong className={summary.gazeOffScreen ? 'warn' : 'ok'}>
+              {summary.gazeOffScreen ? 'looking away' : 'on screen ✓'}
+            </strong>
+          </li>
+        )}
         <li>
           <span>Left exam surface</span>
           <strong className={summary.focusLossCount > 0 ? 'warn' : 'ok'}>

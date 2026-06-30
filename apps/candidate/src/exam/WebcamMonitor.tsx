@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFaceCounter, type FaceCounter } from '../vision/mediapipeFace';
+import { createFaceAnalyzer, type FaceAnalyzer } from '../vision/mediapipeFace';
 
 type Status = 'starting' | 'on' | 'unsupported' | 'error';
 
@@ -21,24 +21,29 @@ function captureFrame(video: HTMLVideoElement): string | null {
 
 export function WebcamMonitor({
   onFaceCount,
+  onGaze,
   onIdentityFrame,
   intervalMs = 1500,
   identityIntervalMs = 30_000,
 }: {
   onFaceCount: (count: number) => void;
+  /** Whether the primary face is oriented toward the screen this frame. */
+  onGaze?: (onScreen: boolean) => void;
   /** Periodically receives a captured frame (data URL) for continuous identity. */
   onIdentityFrame?: (image: string) => void;
   intervalMs?: number;
   identityIntervalMs?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const onGazeRef = useRef(onGaze);
+  onGazeRef.current = onGaze;
   const onIdentityRef = useRef(onIdentityFrame);
   onIdentityRef.current = onIdentityFrame;
   const [status, setStatus] = useState<Status>('starting');
 
   useEffect(() => {
     let stream: MediaStream | undefined;
-    let counter: FaceCounter | undefined;
+    let analyzer: FaceAnalyzer | undefined;
     let timer: ReturnType<typeof setInterval> | undefined;
     let identityTimer: ReturnType<typeof setInterval> | undefined;
     let stopped = false;
@@ -57,14 +62,16 @@ export function WebcamMonitor({
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
-        counter = await createFaceCounter();
+        analyzer = await createFaceAnalyzer();
         if (stopped) return;
         setStatus('on');
         timer = setInterval(() => {
           const video = videoRef.current;
-          if (!video || !counter) return;
+          if (!video || !analyzer) return;
           try {
-            onFaceCount(counter.detect(video, performance.now()));
+            const { count, gazeOnScreen } = analyzer.analyze(video, performance.now());
+            onFaceCount(count);
+            onGazeRef.current?.(gazeOnScreen);
           } catch {
             /* transient detector errors are non-fatal */
           }
@@ -87,7 +94,7 @@ export function WebcamMonitor({
       stopped = true;
       if (timer) clearInterval(timer);
       if (identityTimer) clearInterval(identityTimer);
-      counter?.close();
+      analyzer?.close();
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [onFaceCount, intervalMs, identityIntervalMs]);

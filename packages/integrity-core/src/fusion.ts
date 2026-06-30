@@ -20,6 +20,8 @@ export interface FusionOptions {
   maxFocusLoss: number;
   /** Pasted-char count at or above this flags an answer. */
   minPaste: number;
+  /** More off-screen gaze episodes than this is flagged. */
+  maxGazeOffScreen: number;
 }
 
 export const DEFAULT_FUSION_OPTIONS: FusionOptions = {
@@ -27,6 +29,7 @@ export const DEFAULT_FUSION_OPTIONS: FusionOptions = {
   fastChoiceMs: 1_500,
   maxFocusLoss: 3,
   minPaste: 1,
+  maxGazeOffScreen: 3,
 };
 
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
@@ -86,6 +89,16 @@ export function analyzeIntegrity(
       code: 'excessive-focus-loss',
       severity: 'medium',
       detail: `Left the exam surface ${focusLossCount} times.`,
+    });
+  }
+
+  // Repeated off-screen gaze episodes.
+  const gazeOffCount = input.events.filter((e) => e.type === 'gaze.offscreen').length;
+  if (gazeOffCount > opts.maxGazeOffScreen) {
+    flags.push({
+      code: 'frequent-look-away',
+      severity: 'medium',
+      detail: `Looked away from the screen ${gazeOffCount} times.`,
     });
   }
 

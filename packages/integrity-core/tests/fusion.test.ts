@@ -47,6 +47,13 @@ describe('analyzeIntegrity', () => {
     expect(analyzeIntegrity({ events: few, answers: [] }).some((f) => f.code === 'excessive-focus-loss')).toBe(false);
   });
 
+  it('flags frequent look-aways above the threshold', () => {
+    const events = [0, 1, 2, 3].map((i) => ev(i, i, 'gaze.offscreen'));
+    expect(analyzeIntegrity({ events, answers: [] }).some((f) => f.code === 'frequent-look-away')).toBe(true);
+    const few = [0, 1].map((i) => ev(i, i, 'gaze.offscreen'));
+    expect(analyzeIntegrity({ events: few, answers: [] }).some((f) => f.code === 'frequent-look-away')).toBe(false);
+  });
+
   it('flags pasted text answers and a too-fast choice', () => {
     const pasted = textAnswer('q1', [{ t: 0, kind: 'paste', pos: 0, text: 'an AI answer' }]);
     const fastChoice: AnswerSummary = {

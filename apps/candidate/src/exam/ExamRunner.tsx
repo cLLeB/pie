@@ -26,6 +26,7 @@ export function ExamRunner({
     recordTextInput,
     recordChoice,
     recordFaceCount,
+    recordGaze,
     recordIdentityCheck,
     submit,
   } = useExamSession(exam, signer);
@@ -97,6 +98,7 @@ export function ExamRunner({
           {cameraOn ? (
             <WebcamMonitor
               onFaceCount={recordFaceCount}
+              onGaze={recordGaze}
               onIdentityFrame={
                 identityVerify
                   ? (image) => {

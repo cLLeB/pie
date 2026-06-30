@@ -22,6 +22,11 @@ export class GazeSensor implements Sensor {
     this.flaggedOff = false;
   }
 
+  /** Whether the gaze is currently in the confirmed off-screen state. */
+  isOffScreen(): boolean {
+    return this.flaggedOff;
+  }
+
   observe(onScreen: boolean): void {
     if (onScreen) {
       this.consecutiveOff = 0;

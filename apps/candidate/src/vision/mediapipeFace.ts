@@ -12,13 +12,21 @@ const WASM_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 
-export interface FaceCounter {
-  /** Detect faces in the current video frame; returns the count. */
-  detect(video: HTMLVideoElement, timestampMs: number): number;
+import { isLookingForward, type Keypoint } from './gaze';
+
+export interface FaceAnalysis {
+  /** Number of faces detected. */
+  count: number;
+  /** Whether the primary face is oriented toward the screen (true if no face). */
+  gazeOnScreen: boolean;
+}
+
+export interface FaceAnalyzer {
+  analyze(video: HTMLVideoElement, timestampMs: number): FaceAnalysis;
   close(): void;
 }
 
-export async function createFaceCounter(): Promise<FaceCounter> {
+export async function createFaceAnalyzer(): Promise<FaceAnalyzer> {
   const { FilesetResolver, FaceDetector } = await import('@mediapipe/tasks-vision');
   const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
   const detector = await FaceDetector.createFromOptions(vision, {
@@ -30,9 +38,14 @@ export async function createFaceCounter(): Promise<FaceCounter> {
   });
 
   return {
-    detect(video: HTMLVideoElement, timestampMs: number): number {
+    analyze(video: HTMLVideoElement, timestampMs: number): FaceAnalysis {
       const result = detector.detectForVideo(video, timestampMs);
-      return result.detections.length;
+      const count = result.detections.length;
+      const keypoints: Keypoint[] = (result.detections[0]?.keypoints ?? []).map((k) => ({
+        x: k.x,
+        y: k.y,
+      }));
+      return { count, gazeOnScreen: count === 0 ? true : isLookingForward(keypoints) };
     },
     close(): void {
       detector.close();

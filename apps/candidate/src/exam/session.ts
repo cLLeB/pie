@@ -2,6 +2,7 @@ import {
   Ledger,
   ProvenanceRecorder,
   FacePresenceSensor,
+  GazeSensor,
   applyAll,
   buildAuthenticityBundle,
   type AuthenticityBundle,
@@ -27,6 +28,8 @@ export interface IntegritySummary {
   lastIdentityMatch: boolean | null;
   /** Debounced face presence (null if the camera is off). */
   facePresence: PresenceState | null;
+  /** Whether the candidate is currently looking away (only meaningful with camera on). */
+  gazeOffScreen: boolean;
 }
 
 /**
@@ -44,6 +47,7 @@ export class ExamSession {
   private lastIdentityMatch: boolean | null = null;
   private startedAt = 0;
   private readonly facePresence: FacePresenceSensor;
+  private readonly gaze: GazeSensor;
   /** Per-choice-question selection history: timestamps + values. */
   private readonly choices = new Map<string, { value: string; t: number }[]>();
 
@@ -54,6 +58,7 @@ export class ExamSession {
     this.now = opts.now ?? Date.now;
     this.ledger = new Ledger({ now: this.now });
     this.facePresence = new FacePresenceSensor((type, data) => this.ledger.append(type, data));
+    this.gaze = new GazeSensor((type, data) => this.ledger.append(type, data));
     for (const q of exam.questions) {
       this.recorders.set(q.id, new ProvenanceRecorder(this.now));
     }
@@ -62,6 +67,11 @@ export class ExamSession {
   /** Feed a detected face count from the on-device detector (camera tick). */
   observeFaceCount(count: number): void {
     this.facePresence.observe(count);
+  }
+
+  /** Feed whether the candidate's gaze is on the screen (camera tick). */
+  observeGaze(onScreen: boolean): void {
+    this.gaze.observe(onScreen);
   }
 
   start(): void {
@@ -122,6 +132,7 @@ export class ExamSession {
       identityChecks: this.identityChecks,
       lastIdentityMatch: this.lastIdentityMatch,
       facePresence: this.facePresence.state(),
+      gazeOffScreen: this.gaze.isOffScreen(),
     };
   }
 
