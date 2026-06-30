@@ -1,3 +1,26 @@
 // @protractor/integrity-core — public API surface.
-// Populated as tasks land. Keeping a named export so the module is non-empty.
+//
+// PIE's tamper-evident integrity ledger, modular sensor mesh, and answer-
+// provenance engine: the foundation of the "Proof-of-Authorship" certificate.
+
 export const INTEGRITY_CORE_VERSION = '0.0.1';
+
+export { canonicalize, sha256Hex } from './hash.js';
+export type { IntegrityEvent } from './events.js';
+export { Ledger, verifyChain } from './ledger.js';
+export type { LedgerOptions, VerifyResult } from './ledger.js';
+
+export { applyOp, applyAll } from './provenance/ops.js';
+export type { EditOp } from './provenance/ops.js';
+export { provenanceMetrics } from './provenance/metrics.js';
+export type { ProvenanceMetrics } from './provenance/metrics.js';
+export { textAtStep } from './provenance/replay.js';
+export { ProvenanceRecorder } from './provenance/recorder.js';
+export type { InputEventLike } from './provenance/recorder.js';
+
+export type { Sensor, EventSink } from './sensors/sensor.js';
+export { VisibilitySensor } from './sensors/visibility.js';
+export type { VisibilitySource } from './sensors/visibility.js';
+
+export { buildAuthenticityBundle } from './bundle.js';
+export type { AuthenticityBundle, AnswerProvenance, AnswerSummary } from './bundle.js';
