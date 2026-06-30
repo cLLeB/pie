@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from . import __version__, config
+from .identity import IdentityClient
 from .signing import sign_certificate, verify_certificate, verify_chain
 from .store import Store
 
@@ -34,9 +35,16 @@ class VerifyRequest(BaseModel):
     cert: dict[str, Any]
 
 
-def create_app(store: Store | None = None) -> FastAPI:
+class IdentityVerifyRequest(BaseModel):
+    tenant: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    image: str = Field(min_length=1)
+
+
+def create_app(store: Store | None = None, identity: IdentityClient | None = None) -> FastAPI:
     app = FastAPI(title="PIE Server", version=__version__)
     app.state.store = store or Store()
+    app.state.identity = identity
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -71,6 +79,13 @@ def create_app(store: Store | None = None) -> FastAPI:
             "signatureOk": signature_ok,
             "ok": chain_ok and bool(root_matches) and signature_ok,
         }
+
+    @app.post("/v1/identity/verify")
+    def identity_verify(req: IdentityVerifyRequest) -> dict[str, Any]:
+        if app.state.identity is None:
+            raise HTTPException(status_code=503, detail="identity backend not configured")
+        result = app.state.identity.verify(req.tenant, req.user_id, req.image)
+        return {"match": bool(result.get("success")), "score": float(result.get("score", 0.0))}
 
     @app.get("/v1/certificates/{root}")
     def lookup(root: str) -> dict[str, Any]:
