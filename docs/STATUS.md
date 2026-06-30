@@ -2,7 +2,7 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 63 passing (integrity-core 49 · candidate 10 · review 4). All typecheck + build clean.
+## Tests: 69 passing (integrity-core 53 · candidate 10 · review 6). All typecheck + build clean.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -19,8 +19,10 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
 - [x] **`@pie/review`** — instructor console: verify signed certificate (chain + root + signature),
       per-answer authorship metrics, **keystroke replay scrubber**, tamper simulation.
 
+- [x] **Candidate ↔ review handoff** — `serializeCertificatePackage`/`parseCertificatePackage`;
+      candidate downloads `pie-certificate-*.json`, review console imports + verifies it. Loop closed.
+
 ## In progress / next (the road to 100%)
-- [ ] **Candidate ↔ review handoff** — export certificate package (JSON/file) from candidate; import in review.
 - [ ] **Server (`@pie/server`, FastAPI)** — exam/item delivery, event ingestion (signed, offline-queued),
       **server-side signing** with per-tenant secret, certificate registry + public verify endpoint,
       Postgres + object store. Moves signing off the client (currently a demo secret).
