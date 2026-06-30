@@ -30,3 +30,6 @@ export type { AuthenticityBundle, AnswerProvenance, AnswerSummary } from './bund
 
 export { signCertificate, verifyCertificate, hmacHex } from './signing.js';
 export type { SignedCertificate } from './signing.js';
+
+export { verifySignedBundle } from './verify.js';
+export type { SignedBundleVerification } from './verify.js';

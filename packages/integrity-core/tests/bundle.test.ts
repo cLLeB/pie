@@ -39,6 +39,8 @@ describe('buildAuthenticityBundle', () => {
     const q2 = bundle.answers.find((a) => a.id === 'q2')!;
     expect(q1.metrics.pasteRatio).toBe(0);
     expect(q2.metrics.pasteRatio).toBe(1);
+    // Raw ops travel with the bundle so the answer can be replayed downstream.
+    expect(q1.ops).toEqual(typedAnswer);
   });
 
   it('reports verified=false when the exported chain has been tampered with', () => {

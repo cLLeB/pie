@@ -11,6 +11,8 @@ export interface AnswerProvenance {
 export interface AnswerSummary {
   id: string;
   metrics: ProvenanceMetrics;
+  /** Raw provenance ops — the evidence that powers authorship replay downstream. */
+  ops: EditOp[];
 }
 
 /**
@@ -34,7 +36,11 @@ export function buildAuthenticityBundle(input: {
   return {
     root: input.ledger.root(),
     events,
-    answers: input.answers.map((a) => ({ id: a.id, metrics: provenanceMetrics(a.ops) })),
+    answers: input.answers.map((a) => ({
+      id: a.id,
+      metrics: provenanceMetrics(a.ops),
+      ops: a.ops.map((op) => ({ ...op })),
+    })),
     verified: verifyChain(events).ok,
   };
 }
