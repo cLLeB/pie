@@ -94,6 +94,7 @@ textarea {
 
 .ok { color: var(--ok); }
 .warn { color: var(--warn); }
+.muted { color: var(--muted); }
 
 .cert-status { font-weight: 600; }
 .cert-meta { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }

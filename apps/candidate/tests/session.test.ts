@@ -77,5 +77,21 @@ describe('ExamSession', () => {
     expect(summary.focusLossCount).toBe(1);
     expect(summary.eventCount).toBeGreaterThanOrEqual(2);
     expect(summary.footageStored).toBe(false);
+    expect(summary.identityChecks).toBe(0);
+    expect(summary.lastIdentityMatch).toBeNull();
+  });
+
+  it('binds continuous-identity check results into the ledger and summary', () => {
+    const s = new ExamSession(exam, { now: clock() });
+    s.start();
+    s.recordIdentityCheck(true, 0.97);
+    s.recordIdentityCheck(false, 0.4);
+
+    const types = s.ledger.export().map((e) => e.type);
+    expect(types).toEqual(expect.arrayContaining(['identity.verified', 'identity.mismatch']));
+
+    const summary = s.integritySummary();
+    expect(summary.identityChecks).toBe(2);
+    expect(summary.lastIdentityMatch).toBe(false);
   });
 });

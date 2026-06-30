@@ -12,11 +12,13 @@ export function GlassBox({ summary }: { summary: IntegritySummary }) {
       <ul>
         <li>
           <span>Identity</span>
-          <strong className="ok">verified ✓</strong>
-        </li>
-        <li>
-          <span>Presence</span>
-          <strong className="ok">on screen ✓</strong>
+          {summary.lastIdentityMatch === null ? (
+            <strong className="muted">not yet checked</strong>
+          ) : summary.lastIdentityMatch ? (
+            <strong className="ok">verified ✓ ({summary.identityChecks})</strong>
+          ) : (
+            <strong className="warn">mismatch ✗</strong>
+          )}
         </li>
         <li>
           <span>Left exam surface</span>

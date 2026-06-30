@@ -19,6 +19,10 @@ export interface IntegritySummary {
   focusLossCount: number;
   /** Whether any video/screen footage is being stored. Always false: on-device, flags-not-footage. */
   footageStored: boolean;
+  /** Number of continuous-identity checks performed. */
+  identityChecks: number;
+  /** Result of the most recent identity check (null if none yet). */
+  lastIdentityMatch: boolean | null;
 }
 
 /**
@@ -32,6 +36,8 @@ export class ExamSession {
   private readonly recorders = new Map<string, ProvenanceRecorder>();
   private readonly now: () => number;
   private focusLossCount = 0;
+  private identityChecks = 0;
+  private lastIdentityMatch: boolean | null = null;
 
   constructor(
     private readonly exam: Exam,
@@ -66,6 +72,17 @@ export class ExamSession {
     this.ledger.append('focus.lost');
   }
 
+  /**
+   * Record a continuous-identity check result (from the biometric `/v1` engine via
+   * the server). Binding it into the hash-chained ledger is what makes the "same
+   * verified person throughout" claim part of the tamper-evident certificate.
+   */
+  recordIdentityCheck(match: boolean, score: number): void {
+    this.identityChecks += 1;
+    this.lastIdentityMatch = match;
+    this.ledger.append(match ? 'identity.verified' : 'identity.mismatch', { score });
+  }
+
   focusGained(): void {
     this.ledger.append('focus.gained');
   }
@@ -75,6 +92,8 @@ export class ExamSession {
       eventCount: this.ledger.export().length,
       focusLossCount: this.focusLossCount,
       footageStored: false,
+      identityChecks: this.identityChecks,
+      lastIdentityMatch: this.lastIdentityMatch,
     };
   }
 
