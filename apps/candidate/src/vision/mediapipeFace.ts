@@ -24,6 +24,9 @@ export async function createFaceCounter(): Promise<FaceCounter> {
   const detector = await FaceDetector.createFromOptions(vision, {
     baseOptions: { modelAssetPath: MODEL_URL },
     runningMode: 'VIDEO',
+    // More forgiving than the 0.5 default so borderline / partially-cropped faces
+    // (e.g. leaning in to read) still register.
+    minDetectionConfidence: 0.35,
   });
 
   return {

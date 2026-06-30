@@ -10,31 +10,47 @@ export function presenceState(count: number): PresenceState {
 }
 
 /**
- * Continuous face-presence signal. An on-device detector (MediaPipe/ONNX in the
- * app) calls `observe(count)` each frame/tick; the sensor emits only on state
- * change (present ↔ absent ↔ multiple), so the ledger captures "left seat" and
- * "someone else appeared" without storing any video — flags, not footage.
- *
- * Identity *continuity* (is it the SAME person) is a separate, sampled check via
- * the biometric `/v1` engine; this sensor answers only "is a face there, and how
- * many".
+ * Continuous face-presence signal with absence debouncing. An on-device detector
+ * (MediaPipe/ONNX) calls `observe(count)` each frame; the sensor emits only on a
+ * *confirmed* state change. Crucially, flipping to "absent" requires `absenceFrames`
+ * consecutive empty frames, so a momentary detection drop — leaning in to read,
+ * turning the head, a single bad frame — does not falsely report "no face".
+ * A face (re)appearing registers immediately.
  */
 export class FacePresenceSensor implements Sensor {
-  private last: PresenceState | null = null;
+  private confirmed: PresenceState | null = null;
+  private absentStreak = 0;
 
-  constructor(private readonly sink: EventSink) {}
+  constructor(
+    private readonly sink: EventSink,
+    private readonly absenceFrames = 3,
+  ) {}
 
-  // No DOM to bind; the app drives `observe`. start/stop satisfy the Sensor
-  // contract so this composes in a SensorMesh.
   start(): void {}
   stop(): void {
-    this.last = null;
+    this.confirmed = null;
+    this.absentStreak = 0;
   }
 
   observe(count: number): void {
-    const state = presenceState(count);
-    if (state === this.last) return;
-    this.last = state;
-    this.sink(`face.${state}`, { count });
+    const raw = presenceState(count);
+    if (raw === this.confirmed) {
+      this.absentStreak = 0;
+      return;
+    }
+    if (raw === 'absent') {
+      this.absentStreak += 1;
+      if (this.absentStreak < this.absenceFrames) return; // tolerate a brief loss
+      this.absentStreak = 0;
+    } else {
+      this.absentStreak = 0;
+    }
+    this.confirmed = raw;
+    this.sink(`face.${raw}`, { count });
+  }
+
+  /** The current confirmed presence state (null until the first confirmed reading). */
+  state(): PresenceState | null {
+    return this.confirmed;
   }
 }

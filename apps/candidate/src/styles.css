@@ -99,6 +99,7 @@ textarea {
 .webcam { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--panel); display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .webcam video { border-radius: 8px; background: #000; transform: scaleX(-1); }
 .webcam-status { font-size: 12px; color: var(--muted); }
+.webcam-hint { font-size: 11px; color: var(--muted); }
 .camera-toggle { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
 
 .ok { color: var(--ok); }

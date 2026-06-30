@@ -22,14 +22,14 @@ export function GlassBox({ summary }: { summary: IntegritySummary }) {
         </li>
         <li>
           <span>Face on camera</span>
-          {summary.lastFaceCount === null ? (
+          {summary.facePresence === null ? (
             <strong className="muted">camera off</strong>
-          ) : summary.lastFaceCount === 1 ? (
+          ) : summary.facePresence === 'present' ? (
             <strong className="ok">present ✓</strong>
-          ) : summary.lastFaceCount === 0 ? (
+          ) : summary.facePresence === 'absent' ? (
             <strong className="warn">no face</strong>
           ) : (
-            <strong className="warn">{summary.lastFaceCount} faces</strong>
+            <strong className="warn">multiple faces</strong>
           )}
         </li>
         <li>

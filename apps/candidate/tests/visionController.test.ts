@@ -10,7 +10,7 @@ import {
 function sinks(led: Ledger) {
   const sink = (type: string, data?: Record<string, unknown>) => led.append(type, data);
   return {
-    presence: new FacePresenceSensor(sink),
+    presence: new FacePresenceSensor(sink, 1), // immediate absence for the test
     gaze: new GazeSensor(sink, 1),
     objects: new ProhibitedObjectSensor(sink),
   };

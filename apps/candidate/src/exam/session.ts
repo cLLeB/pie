@@ -6,6 +6,7 @@ import {
   buildAuthenticityBundle,
   type AuthenticityBundle,
   type InputEventLike,
+  type PresenceState,
 } from '@pie/integrity-core';
 import type { Exam } from './types';
 
@@ -24,8 +25,8 @@ export interface IntegritySummary {
   identityChecks: number;
   /** Result of the most recent identity check (null if none yet). */
   lastIdentityMatch: boolean | null;
-  /** Most recent detected face count (null if the camera is off). */
-  lastFaceCount: number | null;
+  /** Debounced face presence (null if the camera is off). */
+  facePresence: PresenceState | null;
 }
 
 /**
@@ -42,7 +43,6 @@ export class ExamSession {
   private identityChecks = 0;
   private lastIdentityMatch: boolean | null = null;
   private startedAt = 0;
-  private lastFaceCount: number | null = null;
   private readonly facePresence: FacePresenceSensor;
   /** Per-choice-question selection history: timestamps + values. */
   private readonly choices = new Map<string, { value: string; t: number }[]>();
@@ -61,7 +61,6 @@ export class ExamSession {
 
   /** Feed a detected face count from the on-device detector (camera tick). */
   observeFaceCount(count: number): void {
-    this.lastFaceCount = count;
     this.facePresence.observe(count);
   }
 
@@ -122,7 +121,7 @@ export class ExamSession {
       footageStored: false,
       identityChecks: this.identityChecks,
       lastIdentityMatch: this.lastIdentityMatch,
-      lastFaceCount: this.lastFaceCount,
+      facePresence: this.facePresence.state(),
     };
   }
 

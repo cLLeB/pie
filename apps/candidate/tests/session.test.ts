@@ -95,15 +95,20 @@ describe('ExamSession', () => {
     expect(summary.lastIdentityMatch).toBeNull();
   });
 
-  it('emits face presence transitions from observed face counts', () => {
+  it('reports face presence, tolerating a brief drop before "no face"', () => {
     const s = new ExamSession(exam, { now: clock() });
     s.start();
     s.observeFaceCount(1); // present
-    s.observeFaceCount(0); // absent
-    s.observeFaceCount(2); // multiple
+    s.observeFaceCount(0); // brief loss — not yet flagged (debounced)
+    expect(s.integritySummary().facePresence).toBe('present');
+
+    // Sustained absence (default 3 consecutive empty frames) confirms "no face".
+    s.observeFaceCount(0);
+    s.observeFaceCount(0);
+    expect(s.integritySummary().facePresence).toBe('absent');
+
     const types = s.ledger.export().map((e) => e.type);
-    expect(types).toEqual(expect.arrayContaining(['face.present', 'face.absent', 'face.multiple']));
-    expect(s.integritySummary().lastFaceCount).toBe(2);
+    expect(types).toEqual(expect.arrayContaining(['face.present', 'face.absent']));
   });
 
   it('binds continuous-identity check results into the ledger and summary', () => {

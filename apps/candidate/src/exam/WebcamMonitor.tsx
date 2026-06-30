@@ -96,6 +96,7 @@ export function WebcamMonitor({
     <div className="webcam">
       <video ref={videoRef} muted playsInline width={160} height={120} />
       <span className="webcam-status">camera: {status}</span>
+      <span className="webcam-hint">Keep your whole face in view.</span>
     </div>
   );
 }
