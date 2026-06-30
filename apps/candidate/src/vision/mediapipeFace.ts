@@ -11,18 +11,28 @@
  */
 
 import { eulerFromMatrix, isFacingScreen, type HeadPose } from './pose';
+import { eyeAversion } from './eyegaze';
 
 const WASM_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm';
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
+/** Eye-aversion score above which the candidate is treated as looking away. */
+const EYE_AWAY_THRESHOLD = 0.5;
+
 export interface FaceAnalysis {
   /** Number of faces detected. */
   count: number;
-  /** Whether the primary face is oriented toward the screen (true if no face). */
+  /**
+   * Whether the primary face is looking at the screen. When the face is lost
+   * (count 0) this is false — losing the face usually means the head turned far
+   * away; absence itself is reported separately by face presence.
+   */
   gazeOnScreen: boolean;
   /** Head pose of the primary face (null if none). */
   pose: HeadPose | null;
+  /** Eye-aversion score (0–1) of the primary face. */
+  eyeAway: number;
 }
 
 export interface FaceAnalyzer {
@@ -38,6 +48,7 @@ export async function createFaceAnalyzer(): Promise<FaceAnalyzer> {
     runningMode: 'VIDEO',
     numFaces: 2,
     outputFacialTransformationMatrixes: true,
+    outputFaceBlendshapes: true,
   });
 
   return {
@@ -46,8 +57,14 @@ export async function createFaceAnalyzer(): Promise<FaceAnalyzer> {
       const count = result.faceLandmarks?.length ?? 0;
       const matrix = result.facialTransformationMatrixes?.[0]?.data;
       const pose = matrix ? eulerFromMatrix(matrix) : null;
-      const gazeOnScreen = count === 0 || pose === null ? true : isFacingScreen(pose);
-      return { count, gazeOnScreen, pose };
+      const eyeAway = eyeAversion(result.faceBlendshapes?.[0]?.categories ?? []).away;
+
+      // Looking at the screen requires a tracked face that is both oriented toward
+      // it (head pose) and not glancing away with the eyes.
+      const gazeOnScreen =
+        count > 0 && pose !== null && isFacingScreen(pose) && eyeAway < EYE_AWAY_THRESHOLD;
+
+      return { count, gazeOnScreen, pose, eyeAway };
     },
     close(): void {
       landmarker.close();
