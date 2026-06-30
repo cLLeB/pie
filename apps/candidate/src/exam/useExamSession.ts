@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AuthenticityBundle, SignedCertificate } from '@pie/integrity-core';
+import type { AuthenticityBundle, InputEventLike, SignedCertificate } from '@pie/integrity-core';
 import { ExamSession, type IntegritySummary } from './session';
 import { localDemoSigner, type RootSigner } from './signerApi';
 import type { Exam } from './types';
@@ -8,7 +8,7 @@ export interface UseExamSession {
   summary: IntegritySummary;
   bundle: AuthenticityBundle | null;
   signedCert: SignedCertificate | null;
-  recordTextInput: (questionId: string, e: React.FormEvent<HTMLTextAreaElement>) => void;
+  recordTextInput: (questionId: string, e: InputEventLike) => void;
   recordChoice: (questionId: string, value: string) => void;
   textAnswer: (questionId: string) => string;
   submit: () => void;
@@ -78,16 +78,8 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
   }, [session, refresh]);
 
   const recordTextInput = useCallback(
-    (questionId: string, e: React.FormEvent<HTMLTextAreaElement>) => {
-      const native = e.nativeEvent as InputEvent;
-      const target = e.currentTarget;
-      session.recordInput(questionId, {
-        inputType: native.inputType,
-        data: native.data,
-        // Bound to onBeforeInput: selectionStart is the pre-edit caret, i.e. the
-        // position where this edit applies — exactly what the recorder expects.
-        selectionStart: target.selectionStart ?? target.value.length,
-      });
+    (questionId: string, e: InputEventLike) => {
+      session.recordInput(questionId, e);
       refresh();
     },
     [session, refresh],

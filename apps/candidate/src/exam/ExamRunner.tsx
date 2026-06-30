@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useExamSession } from './useExamSession';
 import { GlassBox } from './GlassBox';
 import { Certificate } from './Certificate';
+import { ProvenanceTextarea } from './ProvenanceTextarea';
 import type { RootSigner } from './signerApi';
 import type { Exam } from './types';
 
@@ -32,11 +33,9 @@ export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }
                 Q{i + 1}. {q.prompt}
               </legend>
               {q.kind === 'text' ? (
-                <textarea
-                  aria-label={`Answer to ${q.id}`}
-                  rows={5}
-                  placeholder="Type your answer…"
-                  onBeforeInput={(e) => recordTextInput(q.id, e)}
+                <ProvenanceTextarea
+                  ariaLabel={`Answer to ${q.id}`}
+                  record={(e) => recordTextInput(q.id, e)}
                 />
               ) : (
                 <div className="choices">
