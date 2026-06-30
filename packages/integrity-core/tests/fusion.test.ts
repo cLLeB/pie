@@ -54,6 +54,11 @@ describe('analyzeIntegrity', () => {
     expect(analyzeIntegrity({ events: few, answers: [] }).some((f) => f.code === 'frequent-look-away')).toBe(false);
   });
 
+  it('flags frequent voice episodes above the threshold', () => {
+    const events = [0, 1, 2].map((i) => ev(i, i, 'audio.voice'));
+    expect(analyzeIntegrity({ events, answers: [] }).some((f) => f.code === 'frequent-voice')).toBe(true);
+  });
+
   it('flags pasted text answers and a too-fast choice', () => {
     const pasted = textAnswer('q1', [{ t: 0, kind: 'paste', pos: 0, text: 'an AI answer' }]);
     const fastChoice: AnswerSummary = {

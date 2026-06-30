@@ -28,6 +28,7 @@ export type { PresenceState } from './sensors/face-presence.js';
 export { GazeSensor } from './sensors/gaze.js';
 export { ProhibitedObjectSensor } from './sensors/objects.js';
 export { MultiMonitorSensor } from './sensors/screen.js';
+export { AudioActivitySensor } from './sensors/audio.js';
 export { SensorMesh } from './sensors/mesh.js';
 
 export { buildAuthenticityBundle } from './bundle.js';

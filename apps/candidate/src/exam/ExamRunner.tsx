@@ -27,6 +27,7 @@ export function ExamRunner({
     recordChoice,
     recordFaceCount,
     recordGaze,
+    recordAudio,
     recordIdentityCheck,
     submit,
   } = useExamSession(exam, signer);
@@ -99,6 +100,7 @@ export function ExamRunner({
             <WebcamMonitor
               onFaceCount={recordFaceCount}
               onGaze={recordGaze}
+              onAudio={recordAudio}
               onIdentityFrame={
                 identityVerify
                   ? (image) => {
@@ -113,7 +115,7 @@ export function ExamRunner({
             />
           ) : (
             <button className="camera-toggle" onClick={() => setCameraOn(true)}>
-              Enable camera presence check
+              Enable camera &amp; microphone check
             </button>
           )}
         </div>

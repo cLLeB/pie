@@ -111,6 +111,18 @@ describe('ExamSession', () => {
     expect(types).toEqual(expect.arrayContaining(['face.present', 'face.absent']));
   });
 
+  it('records sustained voice into the ledger and summary', () => {
+    const s = new ExamSession(exam, { now: clock() });
+    s.start();
+    s.observeAudio(true); // onset (1) — debounced
+    s.observeAudio(true); // (2) → voice
+    expect(s.integritySummary().voiceActive).toBe(true);
+    s.observeAudio(false); // quiet
+    expect(s.integritySummary().voiceActive).toBe(false);
+    const types = s.ledger.export().map((e) => e.type);
+    expect(types).toEqual(expect.arrayContaining(['audio.voice', 'audio.quiet']));
+  });
+
   it('binds continuous-identity check results into the ledger and summary', () => {
     const s = new ExamSession(exam, { now: clock() });
     s.start();

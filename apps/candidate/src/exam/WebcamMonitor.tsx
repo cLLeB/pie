@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createFaceAnalyzer, type FaceAnalyzer } from '../vision/mediapipeFace';
+import { isVoiceLevel } from '../audio/level';
 
 type Status = 'starting' | 'on' | 'unsupported' | 'error';
 
@@ -22,6 +23,7 @@ function captureFrame(video: HTMLVideoElement): string | null {
 export function WebcamMonitor({
   onFaceCount,
   onGaze,
+  onAudio,
   onIdentityFrame,
   intervalMs = 1500,
   identityIntervalMs = 30_000,
@@ -29,6 +31,8 @@ export function WebcamMonitor({
   onFaceCount: (count: number) => void;
   /** Whether the primary face is oriented toward the screen this frame. */
   onGaze?: (onScreen: boolean) => void;
+  /** Whether voice is detected this tick (microphone). */
+  onAudio?: (isVoice: boolean) => void;
   /** Periodically receives a captured frame (data URL) for continuous identity. */
   onIdentityFrame?: (image: string) => void;
   intervalMs?: number;
@@ -37,6 +41,8 @@ export function WebcamMonitor({
   const videoRef = useRef<HTMLVideoElement>(null);
   const onGazeRef = useRef(onGaze);
   onGazeRef.current = onGaze;
+  const onAudioRef = useRef(onAudio);
+  onAudioRef.current = onAudio;
   const onIdentityRef = useRef(onIdentityFrame);
   onIdentityRef.current = onIdentityFrame;
   const [status, setStatus] = useState<Status>('starting');
@@ -46,6 +52,9 @@ export function WebcamMonitor({
     let analyzer: FaceAnalyzer | undefined;
     let timer: ReturnType<typeof setInterval> | undefined;
     let identityTimer: ReturnType<typeof setInterval> | undefined;
+    let audioCtx: AudioContext | undefined;
+    let audioData: Float32Array<ArrayBuffer> | undefined;
+    let analyserNode: AnalyserNode | undefined;
     let stopped = false;
 
     async function start() {
@@ -56,11 +65,20 @@ export function WebcamMonitor({
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 320, height: 240 },
-          audio: false,
+          audio: true,
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
+        }
+        // Set up on-device audio level analysis (no audio is recorded).
+        if (stream.getAudioTracks().length > 0) {
+          audioCtx = new AudioContext();
+          const source = audioCtx.createMediaStreamSource(stream);
+          analyserNode = audioCtx.createAnalyser();
+          analyserNode.fftSize = 1024;
+          audioData = new Float32Array(analyserNode.fftSize);
+          source.connect(analyserNode);
         }
         analyzer = await createFaceAnalyzer();
         if (stopped) return;
@@ -72,6 +90,10 @@ export function WebcamMonitor({
             const { count, gazeOnScreen } = analyzer.analyze(video, performance.now());
             onFaceCount(count);
             onGazeRef.current?.(gazeOnScreen);
+            if (analyserNode && audioData && onAudioRef.current) {
+              analyserNode.getFloatTimeDomainData(audioData);
+              onAudioRef.current(isVoiceLevel(audioData));
+            }
           } catch {
             /* transient detector errors are non-fatal */
           }
@@ -95,6 +117,7 @@ export function WebcamMonitor({
       if (timer) clearInterval(timer);
       if (identityTimer) clearInterval(identityTimer);
       analyzer?.close();
+      void audioCtx?.close();
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [onFaceCount, intervalMs, identityIntervalMs]);
@@ -103,7 +126,7 @@ export function WebcamMonitor({
     <div className="webcam">
       <video ref={videoRef} muted playsInline width={160} height={120} />
       <span className="webcam-status">camera: {status}</span>
-      <span className="webcam-hint">Keep your whole face in view.</span>
+      <span className="webcam-hint">Keep your whole face in view. Audio level only — nothing is recorded.</span>
     </div>
   );
 }

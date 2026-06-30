@@ -3,6 +3,7 @@ import {
   ProvenanceRecorder,
   FacePresenceSensor,
   GazeSensor,
+  AudioActivitySensor,
   applyAll,
   buildAuthenticityBundle,
   type AuthenticityBundle,
@@ -30,6 +31,8 @@ export interface IntegritySummary {
   facePresence: PresenceState | null;
   /** Whether the candidate is currently looking away (only meaningful with camera on). */
   gazeOffScreen: boolean;
+  /** Whether voice is currently detected (null if the microphone is off). */
+  voiceActive: boolean | null;
 }
 
 /**
@@ -48,6 +51,8 @@ export class ExamSession {
   private startedAt = 0;
   private readonly facePresence: FacePresenceSensor;
   private readonly gaze: GazeSensor;
+  private readonly audio: AudioActivitySensor;
+  private micOn = false;
   /** Per-choice-question selection history: timestamps + values. */
   private readonly choices = new Map<string, { value: string; t: number }[]>();
 
@@ -59,6 +64,7 @@ export class ExamSession {
     this.ledger = new Ledger({ now: this.now });
     this.facePresence = new FacePresenceSensor((type, data) => this.ledger.append(type, data));
     this.gaze = new GazeSensor((type, data) => this.ledger.append(type, data));
+    this.audio = new AudioActivitySensor((type, data) => this.ledger.append(type, data));
     for (const q of exam.questions) {
       this.recorders.set(q.id, new ProvenanceRecorder(this.now));
     }
@@ -72,6 +78,12 @@ export class ExamSession {
   /** Feed whether the candidate's gaze is on the screen (camera tick). */
   observeGaze(onScreen: boolean): void {
     this.gaze.observe(onScreen);
+  }
+
+  /** Feed whether voice is detected this tick (microphone). */
+  observeAudio(isVoice: boolean): void {
+    this.micOn = true;
+    this.audio.observe(isVoice);
   }
 
   start(): void {
@@ -133,6 +145,7 @@ export class ExamSession {
       lastIdentityMatch: this.lastIdentityMatch,
       facePresence: this.facePresence.state(),
       gazeOffScreen: this.gaze.isOffScreen(),
+      voiceActive: this.micOn ? this.audio.state() : null,
     };
   }
 

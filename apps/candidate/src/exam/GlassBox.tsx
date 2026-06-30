@@ -40,6 +40,14 @@ export function GlassBox({ summary }: { summary: IntegritySummary }) {
             </strong>
           </li>
         )}
+        {summary.voiceActive !== null && (
+          <li>
+            <span>Microphone</span>
+            <strong className={summary.voiceActive ? 'warn' : 'ok'}>
+              {summary.voiceActive ? 'voice detected' : 'quiet ✓'}
+            </strong>
+          </li>
+        )}
         <li>
           <span>Left exam surface</span>
           <strong className={summary.focusLossCount > 0 ? 'warn' : 'ok'}>

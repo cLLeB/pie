@@ -17,6 +17,7 @@ export interface UseExamSession {
   recordChoice: (questionId: string, value: string) => void;
   recordFaceCount: (count: number) => void;
   recordGaze: (onScreen: boolean) => void;
+  recordAudio: (isVoice: boolean) => void;
   recordIdentityCheck: (match: boolean, score: number) => void;
   textAnswer: (questionId: string) => string;
   submit: () => void;
@@ -128,6 +129,14 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     [session, refresh],
   );
 
+  const recordAudio = useCallback(
+    (isVoice: boolean) => {
+      session.observeAudio(isVoice);
+      refresh();
+    },
+    [session, refresh],
+  );
+
   const recordIdentityCheck = useCallback(
     (match: boolean, score: number) => {
       session.recordIdentityCheck(match, score);
@@ -153,6 +162,7 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     recordChoice,
     recordFaceCount,
     recordGaze,
+    recordAudio,
     recordIdentityCheck,
     textAnswer,
     submit,

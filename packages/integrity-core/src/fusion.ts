@@ -22,6 +22,8 @@ export interface FusionOptions {
   minPaste: number;
   /** More off-screen gaze episodes than this is flagged. */
   maxGazeOffScreen: number;
+  /** More voice episodes than this is flagged. */
+  maxVoiceEpisodes: number;
 }
 
 export const DEFAULT_FUSION_OPTIONS: FusionOptions = {
@@ -30,6 +32,7 @@ export const DEFAULT_FUSION_OPTIONS: FusionOptions = {
   maxFocusLoss: 3,
   minPaste: 1,
   maxGazeOffScreen: 3,
+  maxVoiceEpisodes: 2,
 };
 
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
@@ -99,6 +102,16 @@ export function analyzeIntegrity(
       code: 'frequent-look-away',
       severity: 'medium',
       detail: `Looked away from the screen ${gazeOffCount} times.`,
+    });
+  }
+
+  // Repeated voice episodes (talking / being coached).
+  const voiceCount = input.events.filter((e) => e.type === 'audio.voice').length;
+  if (voiceCount > opts.maxVoiceEpisodes) {
+    flags.push({
+      code: 'frequent-voice',
+      severity: 'medium',
+      detail: `Voice was detected ${voiceCount} times.`,
     });
   }
 
