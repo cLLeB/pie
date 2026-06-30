@@ -15,7 +15,7 @@ from . import __version__, config
 from .exams import ExamRepo
 from .identity import IdentityClient
 from .signing import sign_certificate, verify_certificate, verify_chain
-from .store import Store
+from .store import EventStore, SqliteStore, Store
 
 
 def _now_ms() -> int:
@@ -44,13 +44,18 @@ class IdentityVerifyRequest(BaseModel):
     image: str = Field(min_length=1)
 
 
+def _default_store() -> EventStore:
+    path = os.environ.get("PIE_DB_PATH")
+    return SqliteStore(path) if path else Store()
+
+
 def create_app(
-    store: Store | None = None,
+    store: EventStore | None = None,
     identity: IdentityClient | None = None,
     exams: ExamRepo | None = None,
 ) -> FastAPI:
     app = FastAPI(title="PIE Server", version=__version__)
-    app.state.store = store or Store()
+    app.state.store = store or _default_store()
     app.state.identity = identity
     app.state.exams = exams or ExamRepo()
 
