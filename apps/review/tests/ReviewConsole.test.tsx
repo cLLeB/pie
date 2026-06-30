@@ -34,6 +34,19 @@ describe('ReviewConsole', () => {
     expect(screen.getByText('Certificate FAILED verification')).toBeInTheDocument();
   });
 
+  it('loads a certificate from an uploaded .json file and verifies with the entered secret', async () => {
+    render(<ReviewConsole />);
+    fireEvent.click(screen.getByText('Load a certificate package'));
+    const json = serializeCertificatePackage(demoPackage.bundle, demoPackage.cert);
+    const file = new File([json], 'pie-certificate.json', { type: 'application/json' });
+
+    // Wrong secret → if the file truly loaded and used it, the verdict must FAIL.
+    fireEvent.change(screen.getByLabelText('Tenant secret'), { target: { value: 'wrong' } });
+    fireEvent.change(screen.getByLabelText('Certificate file'), { target: { files: [file] } });
+
+    expect(await screen.findByText('Certificate FAILED verification')).toBeInTheDocument();
+  });
+
   it('reports a clear error when pasted JSON is malformed', () => {
     render(<ReviewConsole />);
     fireEvent.click(screen.getByText('Load a certificate package'));

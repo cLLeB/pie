@@ -13,9 +13,9 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
   const [secret, setSecret] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
+  const loadFromText = (text: string) => {
     try {
-      const { bundle, cert } = parseCertificatePackage(json);
+      const { bundle, cert } = parseCertificatePackage(text);
       onLoad({ bundle, cert, secret });
       setError(null);
     } catch (e) {
@@ -23,12 +23,30 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
     }
   };
 
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadFromText(String(reader.result ?? ''));
+    reader.onerror = () => setError('Could not read file');
+    reader.readAsText(file);
+  };
+
   return (
     <details className="import">
       <summary>Load a certificate package</summary>
+      <p className="import-hint">
+        Load the downloaded <code>pie-certificate-*.json</code> file (recommended), or paste it below.
+      </p>
+      <input
+        type="file"
+        accept="application/json,.json"
+        aria-label="Certificate file"
+        onChange={onFile}
+      />
       <textarea
         aria-label="Certificate package JSON"
-        placeholder="Paste the downloaded pie-certificate-*.json here"
+        placeholder="…or paste the certificate JSON here"
         rows={4}
         value={json}
         onChange={(e) => setJson(e.target.value)}
@@ -39,7 +57,7 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
         value={secret}
         onChange={(e) => setSecret(e.target.value)}
       />
-      <button onClick={load}>Verify package</button>
+      <button onClick={() => loadFromText(json)}>Verify package</button>
       {error && <p className="warn import-error">{error}</p>}
     </details>
   );
