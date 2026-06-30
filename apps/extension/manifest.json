@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "PIE Exam Monitor",
+  "version": "0.0.1",
+  "description": "Relays high-stakes integrity signals (multi-monitor, window focus) to the PIE exam page during an exam.",
+  "permissions": ["tabs"],
+  "host_permissions": ["http://localhost/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

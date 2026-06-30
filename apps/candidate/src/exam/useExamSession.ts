@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AuthenticityBundle, InputEventLike, SignedCertificate } from '@pie/integrity-core';
+import {
+  parseMessage,
+  type AuthenticityBundle,
+  type InputEventLike,
+  type SignedCertificate,
+} from '@pie/integrity-core';
 import { ExamSession, type IntegritySummary } from './session';
 import { localDemoSigner, type RootSigner } from './signerApi';
 import type { Exam } from './types';
@@ -60,6 +65,15 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     const onCut = onClipboard('clipboard.cut');
     const onPaste = onClipboard('clipboard.paste');
 
+    // Optional browser extension: validate any postMessage and record its signal.
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== window) return;
+      const msg = parseMessage(e.data);
+      if (!msg) return;
+      session.logEvent(msg.type, msg.data);
+      refresh();
+    };
+
     window.addEventListener('blur', onBlur);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibility);
@@ -67,6 +81,7 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     document.addEventListener('copy', onCopy);
     document.addEventListener('cut', onCut);
     document.addEventListener('paste', onPaste);
+    window.addEventListener('message', onMessage);
     return () => {
       window.removeEventListener('blur', onBlur);
       window.removeEventListener('focus', onFocus);
@@ -75,6 +90,7 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
       document.removeEventListener('copy', onCopy);
       document.removeEventListener('cut', onCut);
       document.removeEventListener('paste', onPaste);
+      window.removeEventListener('message', onMessage);
     };
   }, [session, refresh]);
 

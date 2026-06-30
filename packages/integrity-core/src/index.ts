@@ -45,6 +45,9 @@ export type { AuthorshipVerdict, AuthorshipLevel } from './authorship.js';
 export { analyzeIntegrity, DEFAULT_FUSION_OPTIONS } from './fusion.js';
 export type { IntegrityFlag, Severity, FusionOptions } from './fusion.js';
 
+export { PIE_EXT_SOURCE, buildMessage, parseMessage, collectScreenSignals } from './extension.js';
+export type { ExtensionMessage, ScreenLike } from './extension.js';
+
 export { signCertificate, verifyCertificate, hmacHex } from './signing.js';
 export type { SignedCertificate } from './signing.js';
 
