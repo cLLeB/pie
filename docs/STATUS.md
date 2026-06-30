@@ -2,7 +2,14 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 141 passing (integrity-core 74 · candidate 26 · review 9 · server 32). TS+Py, all green.
+> **Resuming the project? Start with [`RESUME.md`](RESUME.md)** — it has the run commands, the open
+> camera/mic calibration state (with the exact observed numbers), and the prioritized next steps.
+
+## Tests: 161 passing (integrity-core 80 · candidate 40 · review 9 · server 32). TS+Py, all green.
+
+## ⚠️ Paused mid-calibration: camera **gaze** + **mic** thresholds not yet dialled in.
+A live debug readout under the webcam (`f · yaw° · pitch° · eye · mic`) drives tuning. Details,
+observed numbers, file/line locations of the thresholds, and how to finish: see `RESUME.md`.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -51,7 +58,12 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
 - [x] **Continuous identity loop** — webcam frame capture → server `/v1/identity/verify` → ledger
       (opt-in via `VITE_PIE_USER_ID`, graceful when the biometric backend is absent).
 - [x] **Exam timer** — countdown with auto-submit on expiry.
-- [ ] **Remaining vision models** — gaze/head-pose + YOLOv8n objects via ONNX-Web (browser/GPU only).
+- [x] **Gaze / look-away (built; calibrating)** — FaceLandmarker head-pose (yaw/pitch) + eye-gaze
+      aversion (blendshapes); glass-box gaze row; frequent-look-away fusion flag. Thresholds need
+      final tuning from real readings (see RESUME.md).
+- [x] **Microphone voice detection (built; calibrating)** — on-device RMS, debounced, fusion flag.
+      Threshold tuning ongoing.
+- [ ] **Object/phone detection** — YOLOv8n via ONNX-Web → `ProhibitedObjectSensor` (core done).
 - [ ] **LMS depth** — full OIDC login-init handshake + Caliper events (needs a real LMS to verify).
 - [ ] **Autosave/resume** — survive a refresh mid-exam while keeping the chain valid.
 - [ ] **Deployment polish** — bundle the biometric engine into compose; cloud Helm.

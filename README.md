@@ -20,6 +20,11 @@ costs that force incumbents to charge (live human proctors, cloud video storage,
 marginal cost of a proctored exam in default mode is ~$0. Model: **open-core** — free, self-hostable
 core + certificate; paid managed cloud, opt-in video tier, premium modules, and enterprise support.
 
+## Resuming work?
+
+Start with **[`docs/RESUME.md`](docs/RESUME.md)** — run commands, current status, the open
+camera/mic calibration state, and the prioritized next steps. Build status: [`docs/STATUS.md`](docs/STATUS.md).
+
 ## Research & design
 
 The full landscape teardown, architecture, the differentiator, and the cost model live in
