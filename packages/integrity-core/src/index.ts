@@ -1,4 +1,4 @@
-// @protractor/integrity-core — public API surface.
+// @pie/integrity-core — public API surface.
 //
 // PIE's tamper-evident integrity ledger, modular sensor mesh, and answer-
 // provenance engine: the foundation of the "Proof-of-Authorship" certificate.

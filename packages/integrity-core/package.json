@@ -1,5 +1,5 @@
 {
-  "name": "@protractor/integrity-core",
+  "name": "@pie/integrity-core",
   "version": "0.0.1",
   "description": "Tamper-evident integrity ledger, sensor mesh, and answer-provenance engine (Proof-of-Authorship core)",
   "type": "module",

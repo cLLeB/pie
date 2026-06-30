@@ -1,8 +1,8 @@
 {
-  "name": "protractor",
+  "name": "pie",
   "version": "0.0.1",
   "private": true,
-  "description": "Browser-based proctoring with Proof-of-Authorship — privacy-first exam integrity",
+  "description": "PIE — Platform for Intelligent Examinations: browser-based proctoring with Proof-of-Authorship, privacy-first exam integrity",
   "type": "module",
   "workspaces": [
     "packages/*",
