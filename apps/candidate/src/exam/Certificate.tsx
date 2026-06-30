@@ -1,4 +1,10 @@
-import { serializeCertificatePackage, type AuthenticityBundle, type SignedCertificate } from '@pie/integrity-core';
+import {
+  serializeCertificatePackage,
+  authorshipVerdict,
+  type AnswerSummary,
+  type AuthenticityBundle,
+  type SignedCertificate,
+} from '@pie/integrity-core';
 
 function downloadPackage(bundle: AuthenticityBundle, cert: SignedCertificate): void {
   const blob = new Blob([serializeCertificatePackage(bundle, cert)], { type: 'application/json' });
@@ -10,11 +16,28 @@ function downloadPackage(bundle: AuthenticityBundle, cert: SignedCertificate): v
   URL.revokeObjectURL(url);
 }
 
-function ratioLabel(ratio: number): { text: string; cls: string } {
-  if (ratio === 0) return { text: 'fully authored (typed)', cls: 'ok' };
-  if (ratio < 0.5) return { text: 'mostly authored', cls: 'ok' };
-  if (ratio < 1) return { text: 'mixed — review', cls: 'warn' };
-  return { text: 'fully pasted — review', cls: 'warn' };
+interface AnswerRow {
+  detail: string;
+  assessment: string;
+  cls: 'ok' | 'warn';
+}
+
+/** Per-answer evidence — kind-aware: text uses authorship, choice uses response provenance. */
+function answerRow(a: AnswerSummary): AnswerRow {
+  if (a.kind === 'choice') {
+    const value = a.choice?.value ?? '(no answer)';
+    const secs = ((a.choice?.latencyMs ?? 0) / 1000).toFixed(1);
+    const changes = a.choice?.changes ?? 0;
+    const changeText = changes > 0 ? `, ${changes} change${changes === 1 ? '' : 's'}` : '';
+    return { detail: `selected “${value}”`, assessment: `answered in ${secs}s${changeText}`, cls: 'ok' };
+  }
+  const verdict = authorshipVerdict(a.metrics);
+  const pct = (a.metrics.pasteRatio * 100).toFixed(0);
+  return {
+    detail: `typed ${a.metrics.typedChars} · pasted ${a.metrics.pastedChars} (${pct}%)`,
+    assessment: verdict.label,
+    cls: verdict.level === 'ok' ? 'ok' : 'warn',
+  };
 }
 
 /**
@@ -56,22 +79,20 @@ export function Certificate({
         <thead>
           <tr>
             <th>Answer</th>
-            <th>Typed</th>
-            <th>Pasted</th>
-            <th>Paste ratio</th>
+            <th>Kind</th>
+            <th>Detail</th>
             <th>Assessment</th>
           </tr>
         </thead>
         <tbody>
           {bundle.answers.map((a) => {
-            const label = ratioLabel(a.metrics.pasteRatio);
+            const row = answerRow(a);
             return (
               <tr key={a.id}>
                 <td>{a.id}</td>
-                <td>{a.metrics.typedChars}</td>
-                <td>{a.metrics.pastedChars}</td>
-                <td>{(a.metrics.pasteRatio * 100).toFixed(0)}%</td>
-                <td className={label.cls}>{label.text}</td>
+                <td>{a.kind}</td>
+                <td>{row.detail}</td>
+                <td className={row.cls}>{row.assessment}</td>
               </tr>
             );
           })}

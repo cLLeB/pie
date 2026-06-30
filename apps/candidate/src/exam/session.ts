@@ -38,6 +38,9 @@ export class ExamSession {
   private focusLossCount = 0;
   private identityChecks = 0;
   private lastIdentityMatch: boolean | null = null;
+  private startedAt = 0;
+  /** Per-choice-question selection history: timestamps + values. */
+  private readonly choices = new Map<string, { value: string; t: number }[]>();
 
   constructor(
     private readonly exam: Exam,
@@ -51,7 +54,20 @@ export class ExamSession {
   }
 
   start(): void {
-    this.ledger.append('session.start', { examId: this.exam.id, questions: this.exam.questions.length });
+    this.startedAt = this.now();
+    this.ledger.append('session.start', {
+      examId: this.exam.id,
+      questions: this.exam.questions.length,
+    });
+  }
+
+  /** Record a selection on an objective (choice) question. */
+  recordChoice(questionId: string, value: string): void {
+    const t = this.now();
+    const history = this.choices.get(questionId) ?? [];
+    history.push({ value, t });
+    this.choices.set(questionId, history);
+    this.ledger.append('answer.choice', { questionId, value });
   }
 
   recordInput(questionId: string, e: InputEventLike): void {
@@ -101,10 +117,22 @@ export class ExamSession {
     this.ledger.append('session.submit');
     return buildAuthenticityBundle({
       ledger: this.ledger,
-      answers: this.exam.questions.map((q) => ({
-        id: q.id,
-        ops: this.recorders.get(q.id)?.ops() ?? [],
-      })),
+      answers: this.exam.questions.map((q) => {
+        if (q.kind === 'choice') {
+          const history = this.choices.get(q.id) ?? [];
+          return {
+            id: q.id,
+            ops: [],
+            kind: 'choice' as const,
+            choice: {
+              value: history.length > 0 ? history[history.length - 1]!.value : null,
+              latencyMs: history.length > 0 ? history[0]!.t - this.startedAt : 0,
+              changes: Math.max(0, history.length - 1),
+            },
+          };
+        }
+        return { id: q.id, ops: this.recorders.get(q.id)?.ops() ?? [], kind: 'text' as const };
+      }),
     });
   }
 }

@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react';
-import { verifySignedBundle, parseCertificatePackage } from '@pie/integrity-core';
+import {
+  verifySignedBundle,
+  parseCertificatePackage,
+  authorshipVerdict,
+  type AnswerSummary,
+} from '@pie/integrity-core';
 import { Replay } from './Replay';
 import { demoPackage, type CertificatePackage } from './demoPackage';
 
@@ -48,10 +53,37 @@ function Check({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
-function assessment(pasteRatio: number): { text: string; cls: string } {
-  if (pasteRatio === 0) return { text: 'authored (typed)', cls: 'ok' };
-  if (pasteRatio < 1) return { text: 'mixed — review', cls: 'warn' };
-  return { text: 'pasted — review', cls: 'warn' };
+function AnswerCard({ answer }: { answer: AnswerSummary }) {
+  if (answer.kind === 'choice') {
+    const value = answer.choice?.value ?? '(no answer)';
+    const secs = ((answer.choice?.latencyMs ?? 0) / 1000).toFixed(1);
+    const changes = answer.choice?.changes ?? 0;
+    return (
+      <article className="answer">
+        <div className="answer-head">
+          <strong>{answer.id}</strong>
+          <span>choice · selected “{value}”</span>
+          <span className="ok">
+            answered in {secs}s{changes > 0 ? ` · ${changes} change${changes === 1 ? '' : 's'}` : ''}
+          </span>
+        </div>
+      </article>
+    );
+  }
+  const verdict = authorshipVerdict(answer.metrics);
+  return (
+    <article className="answer">
+      <div className="answer-head">
+        <strong>{answer.id}</strong>
+        <span>
+          typed {answer.metrics.typedChars} · pasted {answer.metrics.pastedChars} ·{' '}
+          {(answer.metrics.pasteRatio * 100).toFixed(0)}% paste
+        </span>
+        <span className={verdict.level === 'ok' ? 'ok' : 'warn'}>{verdict.label}</span>
+      </div>
+      <Replay ops={answer.ops} />
+    </article>
+  );
 }
 
 export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage }) {
@@ -96,22 +128,9 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
 
       <section className="answers" aria-label="Answers">
         <h2>Answers</h2>
-        {active.bundle.answers.map((a) => {
-          const verdict = assessment(a.metrics.pasteRatio);
-          return (
-            <article key={a.id} className="answer">
-              <div className="answer-head">
-                <strong>{a.id}</strong>
-                <span>
-                  typed {a.metrics.typedChars} · pasted {a.metrics.pastedChars} ·{' '}
-                  {(a.metrics.pasteRatio * 100).toFixed(0)}% paste
-                </span>
-                <span className={verdict.cls}>{verdict.text}</span>
-              </div>
-              <Replay ops={a.ops} />
-            </article>
-          );
-        })}
+        {active.bundle.answers.map((a) => (
+          <AnswerCard key={a.id} answer={a} />
+        ))}
       </section>
     </div>
   );

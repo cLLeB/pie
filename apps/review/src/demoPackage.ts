@@ -27,10 +27,21 @@ function build(): CertificatePackage {
   ledger.append('session.start', { examId: 'pie-demo-001' });
   ledger.append('focus.lost');
   ledger.append('focus.gained');
+  ledger.append('answer.choice', { questionId: 'q2', value: 'Page Visibility / window blur' });
 
   const answers = [
-    { id: 'q1', ops: typed('Provenance beats detection.') },
-    { id: 'q3', ops: [{ t: 200, kind: 'paste', pos: 0, text: 'A pasted AI-written paragraph.' }] as EditOp[] },
+    { id: 'q1', ops: typed('Provenance beats detection.'), kind: 'text' as const },
+    {
+      id: 'q2',
+      ops: [] as EditOp[],
+      kind: 'choice' as const,
+      choice: { value: 'Page Visibility / window blur', latencyMs: 4200, changes: 0 },
+    },
+    {
+      id: 'q3',
+      ops: [{ t: 200, kind: 'paste', pos: 0, text: 'A pasted AI-written paragraph.' }] as EditOp[],
+      kind: 'text' as const,
+    },
   ];
 
   const bundle = buildAuthenticityBundle({ ledger, answers });

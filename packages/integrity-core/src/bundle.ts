@@ -3,16 +3,34 @@ import type { IntegrityEvent } from './events.js';
 import { provenanceMetrics, type ProvenanceMetrics } from './provenance/metrics.js';
 import type { EditOp } from './provenance/ops.js';
 
+export type AnswerKind = 'text' | 'choice';
+
+/** Response provenance for an objective (choice) question. */
+export interface ChoiceProvenance {
+  /** The finally-selected option (null if never answered). */
+  value: string | null;
+  /** Time from session start to the first selection, in ms. */
+  latencyMs: number;
+  /** How many times the selection changed (0 = answered once, no changes). */
+  changes: number;
+}
+
 export interface AnswerProvenance {
   id: string;
   ops: EditOp[];
+  /** Defaults to 'text'. 'choice' answers use ChoiceProvenance, not keystroke ops. */
+  kind?: AnswerKind;
+  choice?: ChoiceProvenance;
 }
 
 export interface AnswerSummary {
   id: string;
+  kind: AnswerKind;
   metrics: ProvenanceMetrics;
   /** Raw provenance ops — the evidence that powers authorship replay downstream. */
   ops: EditOp[];
+  /** Present for 'choice' answers. */
+  choice?: ChoiceProvenance;
 }
 
 /**
@@ -38,8 +56,10 @@ export function buildAuthenticityBundle(input: {
     events,
     answers: input.answers.map((a) => ({
       id: a.id,
+      kind: a.kind ?? 'text',
       metrics: provenanceMetrics(a.ops),
       ops: a.ops.map((op) => ({ ...op })),
+      ...(a.choice ? { choice: { ...a.choice } } : {}),
     })),
     verified: verifyChain(events).ok,
   };

@@ -87,7 +87,7 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
 
   const recordChoice = useCallback(
     (questionId: string, value: string) => {
-      session.logEvent('answer.choice', { questionId, value });
+      session.recordChoice(questionId, value);
       refresh();
     },
     [session, refresh],

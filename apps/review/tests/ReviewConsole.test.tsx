@@ -46,7 +46,14 @@ describe('ReviewConsole', () => {
     render(<ReviewConsole />);
     const answers = screen.getByLabelText('Answers');
     expect(within(answers).getByText('authored (typed)')).toBeInTheDocument();
-    expect(within(answers).getByText('pasted — review')).toBeInTheDocument();
+    expect(within(answers).getByText(/fully pasted — review/)).toBeInTheDocument();
     expect(within(answers).getByText(/100% paste/)).toBeInTheDocument();
+  });
+
+  it('renders a choice answer with its selection and response time, not paste logic', () => {
+    render(<ReviewConsole />);
+    const answers = screen.getByLabelText('Answers');
+    expect(within(answers).getByText(/selected “Page Visibility \/ window blur”/)).toBeInTheDocument();
+    expect(within(answers).getByText(/answered in 4\.2s/)).toBeInTheDocument();
   });
 });

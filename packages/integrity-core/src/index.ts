@@ -31,7 +31,16 @@ export { MultiMonitorSensor } from './sensors/screen.js';
 export { SensorMesh } from './sensors/mesh.js';
 
 export { buildAuthenticityBundle } from './bundle.js';
-export type { AuthenticityBundle, AnswerProvenance, AnswerSummary } from './bundle.js';
+export type {
+  AuthenticityBundle,
+  AnswerProvenance,
+  AnswerSummary,
+  AnswerKind,
+  ChoiceProvenance,
+} from './bundle.js';
+
+export { authorshipVerdict } from './authorship.js';
+export type { AuthorshipVerdict, AuthorshipLevel } from './authorship.js';
 
 export { signCertificate, verifyCertificate, hmacHex } from './signing.js';
 export type { SignedCertificate } from './signing.js';

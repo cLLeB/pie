@@ -9,6 +9,7 @@ const exam: Exam = {
   questions: [
     { id: 'q1', prompt: 'Explain X.', kind: 'text' },
     { id: 'q2', prompt: 'Pick one.', kind: 'choice', options: ['A', 'B'] },
+    { id: 'q3', prompt: 'Explain Y.', kind: 'text' },
   ],
 };
 
@@ -48,17 +49,30 @@ describe('ExamSession', () => {
     // q1 typed
     s.recordInput('q1', { inputType: 'insertText', data: 'a', selectionStart: 0 });
     s.recordInput('q1', { inputType: 'insertText', data: 'b', selectionStart: 1 });
-    // q2 pasted (a single paste of an AI answer)
-    s.recordInput('q2', { inputType: 'insertFromPaste', data: 'pasted answer', selectionStart: 0 });
+    // q3 (also a text question) pasted — a single paste of an AI answer
+    s.recordInput('q3', { inputType: 'insertFromPaste', data: 'pasted answer', selectionStart: 0 });
 
     const bundle = s.finalize();
     expect(bundle.verified).toBe(true);
     expect(bundle.root).toBe(s.ledger.root());
 
     const q1 = bundle.answers.find((a) => a.id === 'q1')!;
-    const q2 = bundle.answers.find((a) => a.id === 'q2')!;
+    const q3 = bundle.answers.find((a) => a.id === 'q3')!;
     expect(q1.metrics.pasteRatio).toBe(0);
-    expect(q2.metrics.pasteRatio).toBe(1);
+    expect(q3.metrics.pasteRatio).toBe(1);
+  });
+
+  it('finalize classifies choice questions with selection, changes and latency', () => {
+    const s = new ExamSession(exam, { now: clock() });
+    s.start();
+    s.recordChoice('q2', 'A');
+    s.recordChoice('q2', 'B'); // changed selection once
+    const bundle = s.finalize();
+    const q2 = bundle.answers.find((a) => a.id === 'q2')!;
+    expect(q2.kind).toBe('choice');
+    expect(q2.choice?.value).toBe('B');
+    expect(q2.choice?.changes).toBe(1);
+    expect(q2.metrics.pasteRatio).toBe(0); // never runs paste logic on a choice
   });
 
   it('logEvent appends an arbitrary integrity event (used by sensors and choice answers)', () => {
