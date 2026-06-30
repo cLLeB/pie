@@ -21,6 +21,12 @@ export type { InputEventLike } from './provenance/recorder.js';
 export type { Sensor, EventSink } from './sensors/sensor.js';
 export { VisibilitySensor } from './sensors/visibility.js';
 export type { VisibilitySource } from './sensors/visibility.js';
+export { FullscreenSensor } from './sensors/fullscreen.js';
+export type { FullscreenSource } from './sensors/fullscreen.js';
+export { SensorMesh } from './sensors/mesh.js';
 
 export { buildAuthenticityBundle } from './bundle.js';
 export type { AuthenticityBundle, AnswerProvenance, AnswerSummary } from './bundle.js';
+
+export { signCertificate, verifyCertificate, hmacHex } from './signing.js';
+export type { SignedCertificate } from './signing.js';
