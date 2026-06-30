@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { signCertificate, type AuthenticityBundle, type SignedCertificate } from '@pie/integrity-core';
+import type { AuthenticityBundle, SignedCertificate } from '@pie/integrity-core';
 import { ExamSession, type IntegritySummary } from './session';
+import { localDemoSigner, type RootSigner } from './signerApi';
 import type { Exam } from './types';
-
-// In production the chain root is signed server-side with the tenant's secret
-// (the biometric engine already signs results this way). Here we sign in-browser
-// with a demo secret purely to render a real, verifiable signature in the UI.
-const DEMO_SIGNING_SECRET = 'pie-demo-tenant-secret';
 
 export interface UseExamSession {
   summary: IntegritySummary;
@@ -24,7 +20,7 @@ export interface UseExamSession {
  * glass-box panel. All integrity logic lives in ExamSession; this hook only
  * adapts DOM events and React state.
  */
-export function useExamSession(exam: Exam): UseExamSession {
+export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner): UseExamSession {
   const sessionRef = useRef<ExamSession | null>(null);
   if (sessionRef.current === null) {
     sessionRef.current = new ExamSession(exam);
@@ -110,9 +106,9 @@ export function useExamSession(exam: Exam): UseExamSession {
   const submit = useCallback(() => {
     const finalized = session.finalize();
     setBundle(finalized);
-    setSignedCert(signCertificate({ root: finalized.root }, DEMO_SIGNING_SECRET));
     refresh();
-  }, [session, refresh]);
+    void signer(finalized.root).then(setSignedCert);
+  }, [session, refresh, signer]);
 
   return { summary, bundle, signedCert, recordTextInput, recordChoice, textAnswer, submit };
 }

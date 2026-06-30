@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { useExamSession } from './useExamSession';
 import { GlassBox } from './GlassBox';
 import { Certificate } from './Certificate';
+import type { RootSigner } from './signerApi';
 import type { Exam } from './types';
 
-export function ExamRunner({ exam }: { exam: Exam }) {
-  const { summary, bundle, signedCert, recordTextInput, recordChoice, submit } = useExamSession(exam);
+export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }) {
+  const { summary, bundle, signedCert, recordTextInput, recordChoice, submit } = useExamSession(
+    exam,
+    signer,
+  );
   const [choices, setChoices] = useState<Record<string, string>>({});
 
   const onChoice = (questionId: string, value: string) => {
