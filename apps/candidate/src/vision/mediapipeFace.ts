@@ -12,13 +12,17 @@ const WASM_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 
-import { isLookingForward, type Keypoint } from './gaze';
+import { isLookingForward, gazeRatio, type Keypoint } from './gaze';
 
 export interface FaceAnalysis {
   /** Number of faces detected. */
   count: number;
   /** Whether the primary face is oriented toward the screen (true if no face). */
   gazeOnScreen: boolean;
+  /** Debug: number of keypoints the detector returned for the primary face. */
+  keypointCount: number;
+  /** Debug: signed gaze ratio (null if undetermined). */
+  gazeRatio: number | null;
 }
 
 export interface FaceAnalyzer {
@@ -45,7 +49,12 @@ export async function createFaceAnalyzer(): Promise<FaceAnalyzer> {
         x: k.x,
         y: k.y,
       }));
-      return { count, gazeOnScreen: count === 0 ? true : isLookingForward(keypoints) };
+      return {
+        count,
+        gazeOnScreen: count === 0 ? true : isLookingForward(keypoints),
+        keypointCount: keypoints.length,
+        gazeRatio: gazeRatio(keypoints),
+      };
     },
     close(): void {
       detector.close();

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createFaceAnalyzer, type FaceAnalyzer } from '../vision/mediapipeFace';
-import { isVoiceLevel } from '../audio/level';
+import { rms } from '../audio/level';
 
 type Status = 'starting' | 'on' | 'unsupported' | 'error';
+
+const VOICE_THRESHOLD = 0.015;
 
 /**
  * Runs the webcam + on-device face detector and reports the live face count. The
@@ -26,6 +28,7 @@ export function WebcamMonitor({
   onAudio,
   onIdentityFrame,
   intervalMs = 1500,
+  audioIntervalMs = 250,
   identityIntervalMs = 30_000,
 }: {
   onFaceCount: (count: number) => void;
@@ -36,6 +39,7 @@ export function WebcamMonitor({
   /** Periodically receives a captured frame (data URL) for continuous identity. */
   onIdentityFrame?: (image: string) => void;
   intervalMs?: number;
+  audioIntervalMs?: number;
   identityIntervalMs?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -46,11 +50,13 @@ export function WebcamMonitor({
   const onIdentityRef = useRef(onIdentityFrame);
   onIdentityRef.current = onIdentityFrame;
   const [status, setStatus] = useState<Status>('starting');
+  const [debug, setDebug] = useState({ faces: 0, kp: 0, ratio: null as number | null, rms: 0 });
 
   useEffect(() => {
     let stream: MediaStream | undefined;
     let analyzer: FaceAnalyzer | undefined;
     let timer: ReturnType<typeof setInterval> | undefined;
+    let audioTimer: ReturnType<typeof setInterval> | undefined;
     let identityTimer: ReturnType<typeof setInterval> | undefined;
     let audioCtx: AudioContext | undefined;
     let audioData: Float32Array<ArrayBuffer> | undefined;
@@ -87,17 +93,28 @@ export function WebcamMonitor({
           const video = videoRef.current;
           if (!video || !analyzer) return;
           try {
-            const { count, gazeOnScreen } = analyzer.analyze(video, performance.now());
+            const { count, gazeOnScreen, keypointCount, gazeRatio } = analyzer.analyze(
+              video,
+              performance.now(),
+            );
             onFaceCount(count);
             onGazeRef.current?.(gazeOnScreen);
-            if (analyserNode && audioData && onAudioRef.current) {
-              analyserNode.getFloatTimeDomainData(audioData);
-              onAudioRef.current(isVoiceLevel(audioData));
-            }
+            setDebug((d) => ({ ...d, faces: count, kp: keypointCount, ratio: gazeRatio }));
           } catch {
             /* transient detector errors are non-fatal */
           }
         }, intervalMs);
+        // Audio is sampled far more often than the vision tick so it actually
+        // catches speech (which falls between words on a slow sampler).
+        if (analyserNode && audioData) {
+          audioTimer = setInterval(() => {
+            if (!analyserNode || !audioData) return;
+            analyserNode.getFloatTimeDomainData(audioData);
+            const level = rms(audioData);
+            onAudioRef.current?.(level > VOICE_THRESHOLD);
+            setDebug((d) => ({ ...d, rms: level }));
+          }, audioIntervalMs);
+        }
         if (onIdentityRef.current) {
           identityTimer = setInterval(() => {
             const video = videoRef.current;
@@ -115,17 +132,23 @@ export function WebcamMonitor({
     return () => {
       stopped = true;
       if (timer) clearInterval(timer);
+      if (audioTimer) clearInterval(audioTimer);
       if (identityTimer) clearInterval(identityTimer);
       analyzer?.close();
       void audioCtx?.close();
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [onFaceCount, intervalMs, identityIntervalMs]);
+  }, [onFaceCount, intervalMs, audioIntervalMs, identityIntervalMs]);
 
   return (
     <div className="webcam">
       <video ref={videoRef} muted playsInline width={160} height={120} />
       <span className="webcam-status">camera: {status}</span>
+      <span className="webcam-debug">
+        faces {debug.faces} · kp {debug.kp} · gaze{' '}
+        {debug.ratio === null ? '–' : debug.ratio.toFixed(2)} · mic {debug.rms.toFixed(3)}
+        {debug.rms > VOICE_THRESHOLD ? ' 🔊' : ''}
+      </span>
       <span className="webcam-hint">Keep your whole face in view. Audio level only — nothing is recorded.</span>
     </div>
   );
