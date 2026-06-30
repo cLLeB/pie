@@ -25,6 +25,8 @@ export { FullscreenSensor } from './sensors/fullscreen.js';
 export type { FullscreenSource } from './sensors/fullscreen.js';
 export { FacePresenceSensor, presenceState } from './sensors/face-presence.js';
 export type { PresenceState } from './sensors/face-presence.js';
+export { GazeSensor } from './sensors/gaze.js';
+export { ProhibitedObjectSensor } from './sensors/objects.js';
 export { SensorMesh } from './sensors/mesh.js';
 
 export { buildAuthenticityBundle } from './bundle.js';
