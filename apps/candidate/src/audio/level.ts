@@ -10,6 +10,6 @@ export function rms(samples: Float32Array): number {
 }
 
 /** Whether a window's loudness suggests speech (above a small threshold). */
-export function isVoiceLevel(samples: Float32Array, threshold = 0.015): boolean {
+export function isVoiceLevel(samples: Float32Array, threshold = 0.035): boolean {
   return rms(samples) > threshold;
 }

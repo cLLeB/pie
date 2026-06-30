@@ -64,7 +64,9 @@ export class ExamSession {
     this.ledger = new Ledger({ now: this.now });
     this.facePresence = new FacePresenceSensor((type, data) => this.ledger.append(type, data));
     this.gaze = new GazeSensor((type, data) => this.ledger.append(type, data));
-    this.audio = new AudioActivitySensor((type, data) => this.ledger.append(type, data));
+    // Require ~1s of sustained sound (4 ticks @ 250ms) before flagging voice, so a
+    // brief cough or distant noise is ignored.
+    this.audio = new AudioActivitySensor((type, data) => this.ledger.append(type, data), 4);
     for (const q of exam.questions) {
       this.recorders.set(q.id, new ProvenanceRecorder(this.now));
     }

@@ -114,8 +114,12 @@ describe('ExamSession', () => {
   it('records sustained voice into the ledger and summary', () => {
     const s = new ExamSession(exam, { now: clock() });
     s.start();
-    s.observeAudio(true); // onset (1) — debounced
-    s.observeAudio(true); // (2) → voice
+    // Needs ~1s sustained (4 ticks) before flagging, so a brief blip is ignored.
+    s.observeAudio(true);
+    s.observeAudio(true);
+    s.observeAudio(true);
+    expect(s.integritySummary().voiceActive).toBe(false); // still below onset threshold
+    s.observeAudio(true); // 4th → voice
     expect(s.integritySummary().voiceActive).toBe(true);
     s.observeAudio(false); // quiet
     expect(s.integritySummary().voiceActive).toBe(false);

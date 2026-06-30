@@ -4,7 +4,7 @@ import { rms } from '../audio/level';
 
 type Status = 'starting' | 'on' | 'unsupported' | 'error';
 
-const VOICE_THRESHOLD = 0.015;
+const VOICE_THRESHOLD = 0.035;
 
 /**
  * Runs the webcam + on-device face detector and reports the live face count. The
@@ -50,7 +50,12 @@ export function WebcamMonitor({
   const onIdentityRef = useRef(onIdentityFrame);
   onIdentityRef.current = onIdentityFrame;
   const [status, setStatus] = useState<Status>('starting');
-  const [debug, setDebug] = useState({ faces: 0, kp: 0, ratio: null as number | null, rms: 0 });
+  const [debug, setDebug] = useState({
+    faces: 0,
+    yaw: null as number | null,
+    pitch: null as number | null,
+    rms: 0,
+  });
 
   useEffect(() => {
     let stream: MediaStream | undefined;
@@ -93,13 +98,15 @@ export function WebcamMonitor({
           const video = videoRef.current;
           if (!video || !analyzer) return;
           try {
-            const { count, gazeOnScreen, keypointCount, gazeRatio } = analyzer.analyze(
-              video,
-              performance.now(),
-            );
+            const { count, gazeOnScreen, pose } = analyzer.analyze(video, performance.now());
             onFaceCount(count);
             onGazeRef.current?.(gazeOnScreen);
-            setDebug((d) => ({ ...d, faces: count, kp: keypointCount, ratio: gazeRatio }));
+            setDebug((d) => ({
+              ...d,
+              faces: count,
+              yaw: pose ? pose.yaw : null,
+              pitch: pose ? pose.pitch : null,
+            }));
           } catch {
             /* transient detector errors are non-fatal */
           }
@@ -145,8 +152,8 @@ export function WebcamMonitor({
       <video ref={videoRef} muted playsInline width={160} height={120} />
       <span className="webcam-status">camera: {status}</span>
       <span className="webcam-debug">
-        faces {debug.faces} · kp {debug.kp} · gaze{' '}
-        {debug.ratio === null ? '–' : debug.ratio.toFixed(2)} · mic {debug.rms.toFixed(3)}
+        faces {debug.faces} · yaw {debug.yaw === null ? '–' : `${debug.yaw.toFixed(0)}°`} · pitch{' '}
+        {debug.pitch === null ? '–' : `${debug.pitch.toFixed(0)}°`} · mic {debug.rms.toFixed(3)}
         {debug.rms > VOICE_THRESHOLD ? ' 🔊' : ''}
       </span>
       <span className="webcam-hint">Keep your whole face in view. Audio level only — nothing is recorded.</span>
