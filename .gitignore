@@ -7,3 +7,11 @@ coverage/
 .env
 .env.local
 .vite/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

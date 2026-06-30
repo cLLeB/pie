@@ -19,6 +19,12 @@ describe('signCertificate / verifyCertificate', () => {
     expect(cert.root).toBe('abc123');
     expect(cert.signedAt).toBe(1_700_000_000_000);
     expect(verifyCertificate(cert, 'tenant-secret')).toBe(true);
+    // Cross-language contract: this exact hex must also be produced by the Python
+    // server (HMAC-SHA256 over the canonical {alg,root,signedAt}). Pinned so the two
+    // signers can never silently diverge.
+    expect(cert.signature).toBe(
+      'df5d7c2445ba2f97236d7e12743b879e4c2ae02a8b13b1dadfecb33dff567dba',
+    );
   });
 
   it('fails verification under a different secret', () => {
