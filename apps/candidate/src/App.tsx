@@ -3,6 +3,7 @@ import { ExamRunner } from './exam/ExamRunner';
 import { sampleExam } from './exam/sampleExam';
 import { fetchExam } from './exam/examApi';
 import { serverThenLocal, localDemoSigner } from './exam/signerApi';
+import { verifyIdentity } from './exam/identityApi';
 import type { Exam } from './exam/types';
 
 // When VITE_PIE_SERVER is set, the exam is loaded from the server and signing is
@@ -10,6 +11,8 @@ import type { Exam } from './exam/types';
 // app runs fully offline against the bundled demo exam and local demo signer.
 const serverUrl = import.meta.env.VITE_PIE_SERVER as string | undefined;
 const tenant = (import.meta.env.VITE_PIE_TENANT as string | undefined) ?? 'demo';
+// Continuous identity needs a server + the enrolled candidate's id.
+const userId = import.meta.env.VITE_PIE_USER_ID as string | undefined;
 
 export function App() {
   const [exam, setExam] = useState<Exam>(sampleExam);
@@ -24,5 +27,9 @@ export function App() {
   }, []);
 
   const signer = serverUrl ? serverThenLocal(serverUrl, tenant) : localDemoSigner;
-  return <ExamRunner exam={exam} signer={signer} />;
+  const identityVerify =
+    serverUrl && userId
+      ? (image: string) => verifyIdentity(serverUrl, tenant, userId, image)
+      : undefined;
+  return <ExamRunner exam={exam} signer={signer} identityVerify={identityVerify} />;
 }

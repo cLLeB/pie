@@ -9,20 +9,38 @@ type Status = 'starting' | 'on' | 'unsupported' | 'error';
  * ledger. Mounted only when the candidate enables the camera, so it never runs in
  * tests or before consent.
  */
+function captureFrame(video: HTMLVideoElement): string | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 240;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
 export function WebcamMonitor({
   onFaceCount,
+  onIdentityFrame,
   intervalMs = 1500,
+  identityIntervalMs = 30_000,
 }: {
   onFaceCount: (count: number) => void;
+  /** Periodically receives a captured frame (data URL) for continuous identity. */
+  onIdentityFrame?: (image: string) => void;
   intervalMs?: number;
+  identityIntervalMs?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const onIdentityRef = useRef(onIdentityFrame);
+  onIdentityRef.current = onIdentityFrame;
   const [status, setStatus] = useState<Status>('starting');
 
   useEffect(() => {
     let stream: MediaStream | undefined;
     let counter: FaceCounter | undefined;
     let timer: ReturnType<typeof setInterval> | undefined;
+    let identityTimer: ReturnType<typeof setInterval> | undefined;
     let stopped = false;
 
     async function start() {
@@ -51,6 +69,14 @@ export function WebcamMonitor({
             /* transient detector errors are non-fatal */
           }
         }, intervalMs);
+        if (onIdentityRef.current) {
+          identityTimer = setInterval(() => {
+            const video = videoRef.current;
+            if (!video || !onIdentityRef.current) return;
+            const frame = captureFrame(video);
+            if (frame) onIdentityRef.current(frame);
+          }, identityIntervalMs);
+        }
       } catch {
         setStatus('error');
       }
@@ -60,10 +86,11 @@ export function WebcamMonitor({
     return () => {
       stopped = true;
       if (timer) clearInterval(timer);
+      if (identityTimer) clearInterval(identityTimer);
       counter?.close();
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [onFaceCount, intervalMs]);
+  }, [onFaceCount, intervalMs, identityIntervalMs]);
 
   return (
     <div className="webcam">

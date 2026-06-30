@@ -16,6 +16,7 @@ export interface UseExamSession {
   recordTextInput: (questionId: string, e: InputEventLike) => void;
   recordChoice: (questionId: string, value: string) => void;
   recordFaceCount: (count: number) => void;
+  recordIdentityCheck: (match: boolean, score: number) => void;
   textAnswer: (questionId: string) => string;
   submit: () => void;
 }
@@ -118,6 +119,14 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     [session, refresh],
   );
 
+  const recordIdentityCheck = useCallback(
+    (match: boolean, score: number) => {
+      session.recordIdentityCheck(match, score);
+      refresh();
+    },
+    [session, refresh],
+  );
+
   const textAnswer = useCallback((questionId: string) => session.answerText(questionId), [session]);
 
   const submit = useCallback(() => {
@@ -134,6 +143,7 @@ export function useExamSession(exam: Exam, signer: RootSigner = localDemoSigner)
     recordTextInput,
     recordChoice,
     recordFaceCount,
+    recordIdentityCheck,
     textAnswer,
     submit,
   };

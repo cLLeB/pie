@@ -7,11 +7,28 @@ import { WebcamMonitor } from './WebcamMonitor';
 import { Timer } from './Timer';
 import { useCountdown } from './useCountdown';
 import type { RootSigner } from './signerApi';
+import type { IdentityResult } from './identityApi';
 import type { Exam } from './types';
 
-export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }) {
-  const { summary, bundle, signedCert, recordTextInput, recordChoice, recordFaceCount, submit } =
-    useExamSession(exam, signer);
+export function ExamRunner({
+  exam,
+  signer,
+  identityVerify,
+}: {
+  exam: Exam;
+  signer?: RootSigner;
+  identityVerify?: (image: string) => Promise<IdentityResult>;
+}) {
+  const {
+    summary,
+    bundle,
+    signedCert,
+    recordTextInput,
+    recordChoice,
+    recordFaceCount,
+    recordIdentityCheck,
+    submit,
+  } = useExamSession(exam, signer);
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [cameraOn, setCameraOn] = useState(false);
 
@@ -78,7 +95,20 @@ export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }
         <div className="side">
           <GlassBox summary={summary} />
           {cameraOn ? (
-            <WebcamMonitor onFaceCount={recordFaceCount} />
+            <WebcamMonitor
+              onFaceCount={recordFaceCount}
+              onIdentityFrame={
+                identityVerify
+                  ? (image) => {
+                      void identityVerify(image)
+                        .then((r) => recordIdentityCheck(r.match, r.score))
+                        .catch(() => {
+                          /* identity backend unavailable — skip this check */
+                        });
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <button className="camera-toggle" onClick={() => setCameraOn(true)}>
               Enable camera presence check
