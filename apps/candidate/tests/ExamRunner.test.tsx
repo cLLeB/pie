@@ -35,10 +35,11 @@ describe('ExamRunner', () => {
     expect(within(panel).getByText(/^[2-9]\d*$/)).toBeInTheDocument();
   });
 
-  it('issues a verified Authenticity Certificate on submit', () => {
+  it('issues a verified, signed Authenticity Certificate on submit', () => {
     render(<ExamRunner exam={exam} />);
     fireEvent.click(screen.getByRole('button', { name: /submit exam/i }));
     const cert = screen.getByLabelText('Authenticity Certificate');
     expect(within(cert).getByText(/Chain verified/)).toBeInTheDocument();
+    expect(within(cert).getByText(/Signature \(HMAC-SHA256\)/)).toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ import { Certificate } from './Certificate';
 import type { Exam } from './types';
 
 export function ExamRunner({ exam }: { exam: Exam }) {
-  const { summary, bundle, recordTextInput, recordChoice, submit } = useExamSession(exam);
+  const { summary, bundle, signedCert, recordTextInput, recordChoice, submit } = useExamSession(exam);
   const [choices, setChoices] = useState<Record<string, string>>({});
 
   const onChoice = (questionId: string, value: string) => {
@@ -58,7 +58,7 @@ export function ExamRunner({ exam }: { exam: Exam }) {
               Submit exam
             </button>
           ) : (
-            <Certificate bundle={bundle} />
+            <Certificate bundle={bundle} signedCert={signedCert} />
           )}
         </main>
 

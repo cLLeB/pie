@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AuthenticityBundle } from '@pie/integrity-core';
+import { signCertificate, type AuthenticityBundle, type SignedCertificate } from '@pie/integrity-core';
 import { ExamSession, type IntegritySummary } from './session';
 import type { Exam } from './types';
+
+// In production the chain root is signed server-side with the tenant's secret
+// (the biometric engine already signs results this way). Here we sign in-browser
+// with a demo secret purely to render a real, verifiable signature in the UI.
+const DEMO_SIGNING_SECRET = 'pie-demo-tenant-secret';
 
 export interface UseExamSession {
   summary: IntegritySummary;
   bundle: AuthenticityBundle | null;
+  signedCert: SignedCertificate | null;
   recordTextInput: (questionId: string, e: React.FormEvent<HTMLTextAreaElement>) => void;
   recordChoice: (questionId: string, value: string) => void;
   textAnswer: (questionId: string) => string;
@@ -28,6 +34,7 @@ export function useExamSession(exam: Exam): UseExamSession {
 
   const [summary, setSummary] = useState<IntegritySummary>(() => session.integritySummary());
   const [bundle, setBundle] = useState<AuthenticityBundle | null>(null);
+  const [signedCert, setSignedCert] = useState<SignedCertificate | null>(null);
   const refresh = useCallback(() => setSummary(session.integritySummary()), [session]);
 
   useEffect(() => {
@@ -43,13 +50,34 @@ export function useExamSession(exam: Exam): UseExamSession {
       session.logEvent(document.hidden ? 'visibility.hidden' : 'visibility.visible');
       refresh();
     };
+    const onFullscreen = () => {
+      session.logEvent(document.fullscreenElement ? 'fullscreen.entered' : 'fullscreen.exited');
+      refresh();
+    };
+    const onClipboard = (type: string) => (e: ClipboardEvent) => {
+      const length = (e.clipboardData?.getData('text') ?? '').length;
+      session.logEvent(type, { length });
+      refresh();
+    };
+    const onCopy = onClipboard('clipboard.copy');
+    const onCut = onClipboard('clipboard.cut');
+    const onPaste = onClipboard('clipboard.paste');
+
     window.addEventListener('blur', onBlur);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibility);
+    document.addEventListener('fullscreenchange', onFullscreen);
+    document.addEventListener('copy', onCopy);
+    document.addEventListener('cut', onCut);
+    document.addEventListener('paste', onPaste);
     return () => {
       window.removeEventListener('blur', onBlur);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('fullscreenchange', onFullscreen);
+      document.removeEventListener('copy', onCopy);
+      document.removeEventListener('cut', onCut);
+      document.removeEventListener('paste', onPaste);
     };
   }, [session, refresh]);
 
@@ -80,9 +108,11 @@ export function useExamSession(exam: Exam): UseExamSession {
   const textAnswer = useCallback((questionId: string) => session.answerText(questionId), [session]);
 
   const submit = useCallback(() => {
-    setBundle(session.finalize());
+    const finalized = session.finalize();
+    setBundle(finalized);
+    setSignedCert(signCertificate({ root: finalized.root }, DEMO_SIGNING_SECRET));
     refresh();
   }, [session, refresh]);
 
-  return { summary, bundle, recordTextInput, recordChoice, textAnswer, submit };
+  return { summary, bundle, signedCert, recordTextInput, recordChoice, textAnswer, submit };
 }

@@ -1,4 +1,4 @@
-import type { AuthenticityBundle } from '@pie/integrity-core';
+import type { AuthenticityBundle, SignedCertificate } from '@pie/integrity-core';
 
 function ratioLabel(ratio: number): { text: string; cls: string } {
   if (ratio === 0) return { text: 'fully authored (typed)', cls: 'ok' };
@@ -12,7 +12,13 @@ function ratioLabel(ratio: number): { text: string; cls: string } {
  * chain root, the verification result, and per-answer authorship evidence. This is
  * the artifact PIE issues instead of a suspicion score — evidence, not a verdict.
  */
-export function Certificate({ bundle }: { bundle: AuthenticityBundle }) {
+export function Certificate({
+  bundle,
+  signedCert,
+}: {
+  bundle: AuthenticityBundle;
+  signedCert?: SignedCertificate | null;
+}) {
   return (
     <section className="certificate" aria-label="Authenticity Certificate">
       <h2>Authenticity Certificate</h2>
@@ -26,6 +32,14 @@ export function Certificate({ bundle }: { bundle: AuthenticityBundle }) {
         </dd>
         <dt>Integrity events</dt>
         <dd>{bundle.events.length}</dd>
+        {signedCert && (
+          <>
+            <dt>Signature ({signedCert.alg})</dt>
+            <dd>
+              <code>{signedCert.signature.slice(0, 24)}…</code>
+            </dd>
+          </>
+        )}
       </dl>
       <h3>Per-answer authorship</h3>
       <table className="cert-answers">
