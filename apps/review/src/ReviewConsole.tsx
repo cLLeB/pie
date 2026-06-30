@@ -1,7 +1,44 @@
 import { useMemo, useState } from 'react';
-import { verifySignedBundle } from '@pie/integrity-core';
+import { verifySignedBundle, parseCertificatePackage } from '@pie/integrity-core';
 import { Replay } from './Replay';
 import { demoPackage, type CertificatePackage } from './demoPackage';
+
+function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) {
+  const [json, setJson] = useState('');
+  const [secret, setSecret] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const load = () => {
+    try {
+      const { bundle, cert } = parseCertificatePackage(json);
+      onLoad({ bundle, cert, secret });
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load package');
+    }
+  };
+
+  return (
+    <details className="import">
+      <summary>Load a certificate package</summary>
+      <textarea
+        aria-label="Certificate package JSON"
+        placeholder="Paste the downloaded pie-certificate-*.json here"
+        rows={4}
+        value={json}
+        onChange={(e) => setJson(e.target.value)}
+      />
+      <input
+        aria-label="Tenant secret"
+        placeholder="Tenant secret"
+        value={secret}
+        onChange={(e) => setSecret(e.target.value)}
+      />
+      <button onClick={load}>Verify package</button>
+      {error && <p className="warn import-error">{error}</p>}
+    </details>
+  );
+}
 
 function Check({ label, ok }: { label: string; ok: boolean }) {
   return (
@@ -30,6 +67,8 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
         <h1>PIE Review Console</h1>
         <span className="badge">Verify · Replay</span>
       </header>
+
+      <ImportPanel onLoad={setActive} />
 
       <section className={`verdict ${result.ok ? 'ok-box' : 'warn-box'}`} aria-label="Verification result">
         <h2>{result.ok ? 'Certificate verified' : 'Certificate FAILED verification'}</h2>

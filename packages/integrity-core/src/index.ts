@@ -33,3 +33,6 @@ export type { SignedCertificate } from './signing.js';
 
 export { verifySignedBundle } from './verify.js';
 export type { SignedBundleVerification } from './verify.js';
+
+export { serializeCertificatePackage, parseCertificatePackage } from './package-io.js';
+export type { CertificatePackage } from './package-io.js';

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { serializeCertificatePackage } from '@pie/integrity-core';
 import { ReviewConsole } from '../src/ReviewConsole';
+import { demoPackage } from '../src/demoPackage';
 
 describe('ReviewConsole', () => {
   it('verifies the demo certificate by default', () => {
@@ -20,6 +22,24 @@ describe('ReviewConsole', () => {
     render(<ReviewConsole />);
     // The demo q1 answer text appears in its replay pane at full scrub.
     expect(screen.getByText(/Provenance beats detection\./)).toBeInTheDocument();
+  });
+
+  it('imports a pasted package and fails verification under the wrong secret', () => {
+    render(<ReviewConsole />);
+    fireEvent.click(screen.getByText('Load a certificate package'));
+    const json = serializeCertificatePackage(demoPackage.bundle, demoPackage.cert);
+    fireEvent.change(screen.getByLabelText('Certificate package JSON'), { target: { value: json } });
+    fireEvent.change(screen.getByLabelText('Tenant secret'), { target: { value: 'wrong-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: /verify package/i }));
+    expect(screen.getByText('Certificate FAILED verification')).toBeInTheDocument();
+  });
+
+  it('reports a clear error when pasted JSON is malformed', () => {
+    render(<ReviewConsole />);
+    fireEvent.click(screen.getByText('Load a certificate package'));
+    fireEvent.change(screen.getByLabelText('Certificate package JSON'), { target: { value: 'garbage' } });
+    fireEvent.click(screen.getByRole('button', { name: /verify package/i }));
+    expect(screen.getByText(/not valid JSON/i)).toBeInTheDocument();
   });
 
   it('classifies a typed answer as authored and a pasted one for review', () => {

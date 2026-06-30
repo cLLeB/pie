@@ -72,5 +72,28 @@ body {
 .replay-empty { color: var(--muted); font-size: 13px; }
 .caret { opacity: 0.6; }
 
+.import { margin-bottom: 18px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--panel); }
+.import summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.import textarea, .import input {
+  width: 100%;
+  margin-top: 8px;
+  background: #0c0e12;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+}
+.import button {
+  margin-top: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.import-error { font-size: 12px; }
+
 .ok { color: var(--ok); }
 .warn { color: var(--warn); }

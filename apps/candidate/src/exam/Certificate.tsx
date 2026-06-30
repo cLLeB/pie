@@ -1,4 +1,14 @@
-import type { AuthenticityBundle, SignedCertificate } from '@pie/integrity-core';
+import { serializeCertificatePackage, type AuthenticityBundle, type SignedCertificate } from '@pie/integrity-core';
+
+function downloadPackage(bundle: AuthenticityBundle, cert: SignedCertificate): void {
+  const blob = new Blob([serializeCertificatePackage(bundle, cert)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pie-certificate-${cert.root.slice(0, 8)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function ratioLabel(ratio: number): { text: string; cls: string } {
   if (ratio === 0) return { text: 'fully authored (typed)', cls: 'ok' };
@@ -67,6 +77,11 @@ export function Certificate({
           })}
         </tbody>
       </table>
+      {signedCert && (
+        <button className="submit" onClick={() => downloadPackage(bundle, signedCert)}>
+          Download certificate
+        </button>
+      )}
       <p className="cert-note">
         Authorship metrics are evidence for human review, never an automatic accusation.
       </p>
