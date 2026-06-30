@@ -2,7 +2,7 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 136 passing (integrity-core 74 · candidate 21 · review 9 · server 32). TS+Py, all green.
+## Tests: 141 passing (integrity-core 74 · candidate 26 · review 9 · server 32). TS+Py, all green.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -48,8 +48,12 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
 - [x] **Certificate file load** — review console loads the downloaded `.json` directly (FileReader).
 - [x] **Sensor catalog (cores)** — visibility, fullscreen, face-presence, gaze (dwell-thresholded),
       prohibited-object, multi-monitor, keystroke provenance — injectable, tested modules.
-- [ ] **Remaining vision models** — gaze/head-pose + YOLOv8n objects via ONNX-Web (browser/GPU).
-- [ ] **Timer + exam lifecycle** — countdown, autosave, resume, submit deadlines.
+- [x] **Continuous identity loop** — webcam frame capture → server `/v1/identity/verify` → ledger
+      (opt-in via `VITE_PIE_USER_ID`, graceful when the biometric backend is absent).
+- [x] **Exam timer** — countdown with auto-submit on expiry.
+- [ ] **Remaining vision models** — gaze/head-pose + YOLOv8n objects via ONNX-Web (browser/GPU only).
+- [ ] **LMS depth** — full OIDC login-init handshake + Caliper events (needs a real LMS to verify).
+- [ ] **Autosave/resume** — survive a refresh mid-exam while keeping the chain valid.
 - [ ] **Deployment polish** — bundle the biometric engine into compose; cloud Helm.
 - [ ] **Hardening** — security review (extension/helper), bias audit of identity step, accessibility,
       pilot validation that provenance separates authored vs. pasted without false positives.
