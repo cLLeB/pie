@@ -4,6 +4,8 @@ import { GlassBox } from './GlassBox';
 import { Certificate } from './Certificate';
 import { ProvenanceTextarea } from './ProvenanceTextarea';
 import { WebcamMonitor } from './WebcamMonitor';
+import { Timer } from './Timer';
+import { useCountdown } from './useCountdown';
 import type { RootSigner } from './signerApi';
 import type { Exam } from './types';
 
@@ -12,6 +14,11 @@ export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }
     useExamSession(exam, signer);
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [cameraOn, setCameraOn] = useState(false);
+
+  const submitted = bundle !== null;
+  const remaining = useCountdown(exam.durationSeconds, () => {
+    if (!submitted) submit();
+  });
 
   const onChoice = (questionId: string, value: string) => {
     setChoices((c) => ({ ...c, [questionId]: value }));
@@ -22,7 +29,10 @@ export function ExamRunner({ exam, signer }: { exam: Exam; signer?: RootSigner }
     <div className="exam">
       <header className="exam-header">
         <h1>{exam.title}</h1>
-        <span className="badge">PIE · Proof-of-Authorship</span>
+        <div className="exam-header-right">
+          {!submitted && <Timer remaining={remaining} />}
+          <span className="badge">PIE · Proof-of-Authorship</span>
+        </div>
       </header>
 
       <div className="exam-body">

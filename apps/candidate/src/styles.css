@@ -36,6 +36,9 @@ body {
   padding: 4px 10px;
 }
 
+.exam-header-right { display: flex; align-items: center; gap: 14px; }
+.timer { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; }
+
 .exam-body {
   display: grid;
   grid-template-columns: 1fr 300px;
