@@ -2,7 +2,7 @@
 
 Honest tracking of what's built vs. what "100% / production" requires. Updated 2026-06-30.
 
-## Tests: 92 passing (integrity-core 56 · candidate 13 · review 6 · server 17). TS+Py, all green.
+## Tests: 103 passing (integrity-core 61 · candidate 16 · review 6 · server 20). TS+Py, all green.
 
 ## Done ✅
 - [x] **Research & design** — 4-doc dossier (landscape, architecture, sauce, cost) in `docs/research/`.
@@ -33,9 +33,15 @@ Honest tracking of what's built vs. what "100% / production" requires. Updated 2
       identity results into the ledger as events.
 - [x] **Exam delivery (server)** — `GET /v1/exams/{id}` + `ExamRepo`. Next: candidate fetches it; QTI import.
 - [x] **Deploy scaffold** — server `Dockerfile` + root `docker-compose.yml` (on-prem, offline).
-- [ ] **On-device vision sensors** — `FacePresenceSensor` core done; wire MediaPipe/ONNX in the app
-      (face presence/count, gaze/head-pose, phone/object). Privacy-first (events, not footage).
-- [ ] **Persistence** — Postgres + object store behind the `Store` interface (in-memory today).
+- [x] **Persistence** — durable `SqliteStore` behind `EventStore` Protocol (offline single-file);
+      compose mounts a volume. Postgres/object-store can follow behind the same Protocol.
+- [~] **Sensor catalog (testable cores done)** — visibility, fullscreen, face-presence, **gaze
+      (dwell-thresholded)**, **prohibited-object**, **multi-monitor**, keystroke provenance. Each is
+      an injectable module emitting ledger events. Remaining: feed them from real on-device models
+      (MediaPipe FaceMesh/ONNX-Web gaze+pose, YOLOv8n objects) + `getUserMedia` in the app — browser/
+      GPU runtime work that can't be unit-tested here.
+- [ ] **MV3 extension** — relay screen/multi-monitor/process signals into the page → ledger.
+- [ ] **LMS** — LTI 1.3 launch + QTI import + Caliper.
 - [ ] **Timer + exam lifecycle** — countdown, autosave, resume, submit deadlines.
 - [ ] **LMS integration** — LTI 1.3 launch + QTI item import + Caliper events.
 - [ ] **Browser extension (MV3)** — screen/multi-monitor/process signals for the high-stakes rung.
