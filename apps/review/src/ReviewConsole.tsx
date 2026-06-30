@@ -3,7 +3,9 @@ import {
   verifySignedBundle,
   parseCertificatePackage,
   authorshipVerdict,
+  analyzeIntegrity,
   type AnswerSummary,
+  type IntegrityFlag,
 } from '@pie/integrity-core';
 import { Replay } from './Replay';
 import { demoPackage, type CertificatePackage } from './demoPackage';
@@ -63,6 +65,28 @@ function ImportPanel({ onLoad }: { onLoad: (pkg: CertificatePackage) => void }) 
   );
 }
 
+const SEVERITY_CLASS: Record<string, string> = { high: 'warn', medium: 'amber', low: 'muted' };
+
+function FlagsPanel({ flags }: { flags: IntegrityFlag[] }) {
+  return (
+    <section className="flags" aria-label="Integrity flags">
+      <h2>Integrity flags</h2>
+      {flags.length === 0 ? (
+        <p className="ok">No flags raised — clean session.</p>
+      ) : (
+        <ul>
+          {flags.map((f, i) => (
+            <li key={`${f.code}-${i}`} className={SEVERITY_CLASS[f.severity] ?? 'muted'}>
+              <strong>[{f.severity}]</strong> {f.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="cert-note">Flags are evidence for human review, never an automatic accusation.</p>
+    </section>
+  );
+}
+
 function Check({ label, ok }: { label: string; ok: boolean }) {
   return (
     <li className={ok ? 'ok' : 'warn'}>
@@ -110,6 +134,10 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
     () => verifySignedBundle({ bundle: active.bundle, cert: active.cert, secret: active.secret }),
     [active],
   );
+  const flags = useMemo(
+    () => analyzeIntegrity({ events: active.bundle.events, answers: active.bundle.answers }),
+    [active],
+  );
 
   return (
     <div className="review">
@@ -143,6 +171,8 @@ export function ReviewConsole({ pkg = demoPackage }: { pkg?: CertificatePackage 
           Simulate tampering
         </button>
       </section>
+
+      <FlagsPanel flags={flags} />
 
       <section className="answers" aria-label="Answers">
         <h2>Answers</h2>

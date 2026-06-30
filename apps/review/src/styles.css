@@ -95,5 +95,12 @@ body {
 }
 .import-error { font-size: 12px; }
 
+.flags { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 20px; background: var(--panel); }
+.flags h2 { font-size: 15px; margin: 0 0 10px; }
+.flags ul { list-style: none; margin: 0; padding: 0; }
+.flags li { padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+
 .ok { color: var(--ok); }
 .warn { color: var(--warn); }
+.amber { color: #d29922; }
+.muted { color: var(--muted); }

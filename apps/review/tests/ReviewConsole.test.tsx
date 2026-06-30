@@ -63,6 +63,12 @@ describe('ReviewConsole', () => {
     expect(within(answers).getByText(/100% paste/)).toBeInTheDocument();
   });
 
+  it('raises an integrity flag for the pasted answer in the demo', () => {
+    render(<ReviewConsole />);
+    const panel = screen.getByLabelText('Integrity flags');
+    expect(within(panel).getByText(/pasted characters/)).toBeInTheDocument();
+  });
+
   it('renders a choice answer with its selection and response time, not paste logic', () => {
     render(<ReviewConsole />);
     const answers = screen.getByLabelText('Answers');
